@@ -8,6 +8,7 @@
 
 // MyApp is the main Object of this program
 wxIMPLEMENT_APP(MyApp);
+//Druhy comment
 
 bool MyApp::OnInit()
 {
