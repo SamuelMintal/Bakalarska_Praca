@@ -60,7 +60,10 @@ class Agent {
     std::vector<plan_step> original_plan;
     std::vector<plan_step> altered_plan;
 
-    bool errorness = false;//If the agent is late or soon. In other words it has bad timing
+    //If the agent is late or soon. In other words it has bad timing
+    // 0 == no error, 1 == mild error, 5 == lost
+    int errorness = 0;
+
 public:
 
 
@@ -101,7 +104,17 @@ public:
                     current.x = altered_plan[i].position.x + (static_cast<float>((time - tmp_time)) / static_cast<float>(altered_plan[i].duration)) * (altered_plan[i + 1].position.x - altered_plan[i].position.x); //There is always i+1 th action because if i-th action was end, i didnt get into this else branch
                     current.y = altered_plan[i].position.y + (static_cast<float>((time - tmp_time)) / static_cast<float>(altered_plan[i].duration)) * (altered_plan[i + 1].position.y - altered_plan[i].position.y); //
 
-                    rotation = altered_plan[i].rotation + (static_cast<float>((time - tmp_time)) / static_cast<float>(altered_plan[i].duration)) * (altered_plan[i + 1].rotation - altered_plan[i].rotation);
+
+                    int future_rotation = altered_plan[i + 1].rotation;
+                    int original_rotation = altered_plan[i].rotation;
+
+                    //necsessery for correct visualization
+                    if (altered_plan[i].action == "turnLeft" && original_rotation == 0)
+                        original_rotation = 360;
+                    else if (altered_plan[i].action == "turnRight" && future_rotation == 0)
+                        future_rotation = 360;
+
+                    rotation = (original_rotation + (static_cast<int>((static_cast<float>(time - tmp_time) / static_cast<float>(altered_plan[i].duration)) * (future_rotation - original_rotation))) % 360);
                 }
                 break;
             }
@@ -143,11 +156,11 @@ public:
         return ret;
     }
 
-    void set_error_state(bool b) {
+    void set_error_state(int b) {
         errorness = b;
     }
 
-    bool get_error_state() {
+    int get_error_state() {
         return errorness;
     }
 
@@ -178,7 +191,26 @@ public:
         altered_max_time = total_altered_plan;
     }
 
+    void set_altered_plan(const std::vector<plan_step>& vct, int total_altered_plan) {
+        altered_plan = vct;
+        altered_max_time = total_altered_plan;
+    }
+
 };
+
+
+
+
+
+
+
+
+
+/**************************************************************************************************************************************************************************/
+/**************************************************************************************************************************************************************************/
+/************************************************************   SIMULATION   *********************************************************************************************/
+/**************************************************************************************************************************************************************************/
+/**************************************************************************************************************************************************************************/
 
 
 class Simulation {
@@ -190,104 +222,164 @@ class Simulation {
     const int ERROR_TRESHOLD = 1000; /////////// ERROR IS CONSIDERED ONLY IF AGENT IS LATE OR SOONER THEN 1 SECONDs
     int agent_plan_max_length = 0;
 
+
+
+    /**************************************************************************************************************************************************************************/
+    /************************************************************   ALTER PLANS   *********************************************************************************************/
+    
+
     float normal_distribution(float sigma, float x) { //u == 0 always
 
         return (1 / (sigma * sqrtf(2 * 3.14159))) * pow(2.71828, -0.5 * pow(x / sigma, 2));
-
     }
 
-    void alter_plans_of_agents(int from, int to) { //weird indexes imply that this function can be used to alter one or all of the agents plans ///////////////////////////////////////// IS IGNORING TURNING ANGLES NEED TO FINISH
-        int tmp_error_speed_max = 0;
-        int tmp_error_speed_sigma = 0;
+    float get_scaler(int sigma, int max) {
 
-        int tmp_error_angle_max = 0;
-        int tmp_error_angle_sigma = 0;
-        int tmp_error_angle_fatal = 0;
+        float ret_scaler = 1;
+        float f_sigma = static_cast<float>(sigma);
+        float f_max = static_cast<float>(max);
 
-        std::vector<plan_step> altered;
-        std::vector<plan_step> original;
+        //while the possibility of max error occuring is (due to casting to int) zero, increase the scaler so it wouldn't be
+        while (!static_cast<int>(normal_distribution(f_sigma, f_max) * ret_scaler)) {
+            ret_scaler *= 10;
+        }
 
-        std::vector<int> err_vec;
-        std::vector<std::pair<int, float>> prob_map;// """pigeon hole principle"""
+        return ret_scaler * 100; //*100 so the probabilities will be more accurate
+    }
+
+    /* Populates specified map using normal distribution with parameters as specified
+    * returns probablities*scaler sum
+    */
+    uint64_t init_prob_map(std::vector<std::pair<int, float>>& map, float precision, int max, int sigma) {
+
         std::pair<int, float> prob_pair;
+        uint64_t ret_sum = 0;
 
-        int prob_sum;
+        auto speed_scaler = get_scaler(sigma, max);
+        for (float x = 0; x <= max; x += precision) {
+            //first is probablity * scaler casted into int
+            //second is value of x
+            prob_pair = std::make_pair(static_cast<int>(normal_distribution(sigma, x) * speed_scaler), x);
+            ret_sum += prob_pair.first;
+            map.push_back(prob_pair);
+            if (x != 0) {
+                ret_sum += prob_pair.first;
+                prob_pair.second = prob_pair.second * (-1); //normal distribution is symetrical when u == 0
+                map.push_back(prob_pair);
+            }
+        }
 
-        const float scaler = 100; //for the normal distributions
-        const float precision = 1.0;
+        return ret_sum;
+    }
 
-        int value = 0;
-        int add_up = 0;
-        int idx_of_rolled_pair = 0;
+    
+    /* Rolls random pair with consideration of probabilities given by map
+    * (That means if for example option a.) has 90% of happening it should choose it 9 out of 10 times)
+    * returns index to said pair
+    */
+    size_t roll_pair_and_get_its_index(const std::vector<std::pair<int, float>>& prob_map, uint64_t prob_sum, int i, int j) {
+        
+        //rolling random prob_value
+        srand(j + i * (11071998 * j * j));
+        uint64_t r1 = rand();
+        srand(j * (23072001 * r1 * j));
+        uint64_t r2 = rand();
+        uint64_t chosen_prob_value = (r1 * r2) % prob_sum;
+
+        uint64_t curr_prob_sum = 0;
+
+        //Find the rolled pair
+        for (size_t i = 0; i < prob_map.size(); i++) {
+            curr_prob_sum += prob_map[i].first;
+
+            //If I rolled this pair
+            if (curr_prob_sum >= chosen_prob_value) {
+                return i;
+            }
+        }
+       
+        return 0;
+    }
+
+    /* Sets agent's timediffs vector accordingly to the 2 specified plans
+    * returns time spam of the altered plan
+    */
+    int set_time_diffs_of_agent_accordingly_to(int agent_index, const std::vector<plan_step>& altered, const std::vector<plan_step>& original) {
+        //Note-ing time differences of original vs altered plan of agent, so I can detect errors later
+
+        //Reset it for pushabcking new items
+        time_diffs_of_agents[agent_index].clear(); 
 
         int time_counter_original = 0;
-        int time_counter_altered = 0;
+        int time_counter_altered = 0;        
+
+        for (size_t step = 0; step < altered.size(); step++) { //Errors can be noted ONLY when the agent finishes the action. Motivation is that he could make up for his mistake until the end of the plan_step action
+            time_counter_original += original[step].duration;
+            time_counter_altered += altered[step].duration;
+
+            time_diffs_of_agents[agent_index].emplace_back(Time_diff_error(time_counter_altered, time_counter_altered - time_counter_original));
+        }
+
+        return time_counter_altered;
+    }
 
 
+    void alter_plans_of_agents(int from, int to) { //weird indexes imply that this function can be used to alter one or all of the agents plans ///////////////////////////////////////// IS IGNORING TURNING ANGLES NEED TO FINISH
 
 
-        for (size_t i = from; i < to; i++) { //for every agent
-            err_vec = agents[i].get_err_vector();
-            altered = agents[i].get_original_plan();
-            tmp_error_speed_max = err_vec[0];
-            tmp_error_speed_sigma = err_vec[1];
+        const float speed_precision = 100;   // n in  miliseconds ,where agent can be faster/slower x*n miliseconds and x*n <= max_error_speed
+        const float angle_precision = 1;     // n in  degrees     ,where agent can be rotated badly x*n degrees     and x*n <= max_error_agnle          
 
-            tmp_error_angle_max = err_vec[2];
-            tmp_error_angle_sigma = err_vec[3];
-            tmp_error_angle_fatal = err_vec[4];
 
-            prob_sum = 0;
-            for (float x = 0; x < tmp_error_speed_max; x += precision) { //create the table of probabilities
-                //first is probablity * scaler casted into int
-                //second is value of x
-                prob_pair = std::make_pair(static_cast<int>(normal_distribution(tmp_error_speed_sigma, x) * scaler), x);
-                prob_sum += prob_pair.first;
-                prob_map.push_back(prob_pair);
-                if (x != 0) {
-                    prob_sum += prob_pair.first;
-                    prob_pair.second = prob_pair.second * (-1); //normal distribution is symetrical when u==0
-                    prob_map.push_back(prob_pair);
-                }
-            }
+        //for every agent            
+        for (size_t i = from; i < to; i++) { 
+            std::vector<plan_step> altered = agents[i].get_original_plan();
 
-            if (tmp_error_speed_max != 0) {//If theres no room to change speed, just dont
-                for (size_t j = 0; j < altered.size(); j++) { //Alter the duration of plan_steps to create altered plan
+            auto err_vec = agents[i].get_err_vector();
+            int tmp_error_speed_max = err_vec[0];
+            int tmp_error_speed_sigma = err_vec[1];
+            int tmp_error_angle_max = err_vec[2];
+            int tmp_error_angle_sigma = err_vec[3];
+            int tmp_error_angle_fatal = err_vec[4];
+            
+            std::vector<std::pair<int, float>> speed_prob_map; // maps probability*scale to relative change to plan_step action duration
+            std::vector<std::pair<int, float>> angle_prob_map; // scale is chosen by init_prob_map and I don't care about its concrete value
+
+            uint64_t speed_prob_sum = init_prob_map(speed_prob_map, speed_precision, tmp_error_speed_max, tmp_error_speed_sigma);
+            uint64_t angle_prob_sum = init_prob_map(angle_prob_map, angle_precision, tmp_error_angle_max, tmp_error_angle_sigma);
+           
+
+            //for every plan_step
+            for (size_t j = 0; j < altered.size(); j++) {
+                if ((altered[j].action == "turnLeft" || altered[j].action == "turnRight") && tmp_error_angle_max != 0) {
                     //for every step just roll the dices
-                    srand(i * j * 123 + 321);
-                    value = rand() % prob_sum;
-                    add_up = 0;
+                    size_t rolled_pair_index = roll_pair_and_get_its_index(angle_prob_map, angle_prob_sum, i, j);
 
-                    //Find the pair of rolled x
-                    for (size_t i = 0; i < prob_map.size(); i++) {
-                        add_up += prob_map[i].first;
-                        if (add_up >= value) {//I rolled this pair
-                            idx_of_rolled_pair = i;
-                            break;
-                        }
-                    }
+                    //alter the rotation
 
-                    altered[j].duration = altered[j].duration + prob_map[idx_of_rolled_pair].second * 1000; //alter the duration ____________________ *1000 to delete????//////////////////////////
+
+                    //TODO
+                    //TODO
+                    //TODO
+
 
                 }
+                else if (altered[j].action == "go" && tmp_error_speed_max != 0) {
+                    //for every step just roll the dices
+                    size_t rolled_pair_index = roll_pair_and_get_its_index(speed_prob_map, speed_prob_sum, i, j);
+                    
+                    //alter the duration
+                    altered[j].duration = altered[j].duration + speed_prob_map[rolled_pair_index].second;
+                }
+                //and the rest (start, end, wait) wont be affected
             }
 
 
-            //Note-ing time differences of original vs altered plan of agent, so I can detect errors later                    
-            time_diffs_of_agents[i].clear(); //Reset it for pushabcking new items
-
-            time_counter_altered = 0;
-            time_counter_original = 0;
-            original = agents[i].get_original_plan();
-            for (size_t step = 0; step < altered.size(); step++) { //Errors can be noted ONLY when the agent finishes the action. Motivation is that he could make up for his mistake until the end of the plan_step action
-                time_counter_original += original[step].duration;
-                time_counter_altered += altered[step].duration;
-
-                time_diffs_of_agents[i].emplace_back(Time_diff_error(time_counter_altered, time_counter_altered - time_counter_original));
-            }
-
+            int time_counter_altered = set_time_diffs_of_agent_accordingly_to(i, altered, agents[i].get_original_plan());
 
             agents[i].set_altered_plan(std::move(altered), time_counter_altered);
             altered.clear();
+
             //And onto the next Agent!
         }
     }
@@ -317,6 +409,10 @@ class Simulation {
 
         return idx;
     }
+
+    /**************************************************************************************************************************************************************************/
+    /************************************************************   LOAD PLANS   *********************************************************************************************/
+
 
     /* 
     * Puts the concrete Solver Option Predicat Name into the line
@@ -403,8 +499,8 @@ class Simulation {
             if (line == "#MapSizeX,MapSizeY") {
                 std::getline(myfile, line); //get the data
 
-                map_x = std::stoi(&line[1]) * 2 - 1; //mapsize X
-                map_y = std::stoi(&line[line.find(',') + 1]) * 2 - 1; //mapsize Y
+                map_x = static_cast<size_t>(std::stoi(&line[1])) * 2 - 1; //mapsize X
+                map_y = static_cast<size_t>(std::stoi(&line[line.find(',') + 1])) * 2 - 1; //mapsize Y
                 
                 break;
             }
@@ -703,10 +799,10 @@ class Simulation {
                  int angle_delta = previous_step.rotation - cardinal_to_angle(step.action);
 
                  //rotate to the right angle
-                 if (angle_delta == 90) {
+                 if (angle_delta == 90 || angle_delta == -270) {
                      ret.emplace_back(plan_step(step.position, previous_step.rotation, "turnLeft", turn_duration));
                  }
-                 else if (angle_delta == -90) {
+                 else if (angle_delta == -90 || angle_delta == 270) {
                      ret.emplace_back(plan_step(step.position, previous_step.rotation, "turnRight", turn_duration));
                  }
                  else if (std::abs(angle_delta) == 180) {
@@ -819,20 +915,17 @@ public:
 
         for (size_t i = 0; i < agents.size(); i++) {
             agents[i].move_to_time(time);
-
-
-
             //Check if the time difference for agent[i] at time 'time' is too big
 
             idx = get_index_of_timediff_for_agent_at_time(i, time);
             //Now in the idx is the index of the last step I have finished (-1 == I havent finished even the first one)
 
             if (idx == -1) //If I havent even finished first step (index 0), I cannot be too late/soon
-                agents[i].set_error_state(false);
+                agents[i].set_error_state(0);
             else if (std::abs(time_diffs_of_agents[i][idx].time_diff) >= ERROR_TRESHOLD) //If I am too late/soon
-                agents[i].set_error_state(true);
+                agents[i].set_error_state(1);
             else
-                agents[i].set_error_state(false); //Otherwise I am ok
+                agents[i].set_error_state(0); //Otherwise I am ok
 
 
         }
@@ -878,12 +971,10 @@ public:
     * returns how late/soon the agent is at specified time
     */
     int get_time_diffs_of_agent_at_time(int agent_index, int time) {
-
         int timediff_idx = get_index_of_timediff_for_agent_at_time(agent_index, time);
 
-        if (timediff_idx == -1) {
-            return 0;
-        }
+        if (timediff_idx == -1)
+            return 0;        
         else
             return time_diffs_of_agents[agent_index][timediff_idx].time_diff;
     }
