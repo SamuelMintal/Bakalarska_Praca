@@ -27,9 +27,12 @@ public:
     //if the step is rotation than this field tells how much to rotate
     int angle_to_rotate;
 
+    //id used for calculating time_diffs correctly and may be later used for better visualization of altered vs original plan
+    int id;
 
-    plan_step(pos position, int rotation, std::string action, int duration, int p_angle_to_rotate = 0) :
-        position(position), rotation(rotation), action(action), duration(duration) {
+
+    plan_step(pos position, int rotation, std::string action, int duration, int id, int p_angle_to_rotate = 0) :
+        position(position), rotation(rotation), action(action), duration(duration), id(id) {
         angle_to_rotate = p_angle_to_rotate;
     }
 };
@@ -94,9 +97,12 @@ public:
     bool move_to_time(int time) {//time in miliseconds    
 
         if (time > altered_max_time) { //If I was supposed to move more than I can i stand at the end of my plan
-
             current = altered_plan[altered_plan.size() - 1].position;
-            return;
+            
+            if (altered_plan[altered_plan.size() - 1].action == "endLost")
+                return false;
+            else
+                return true;
         }
 
         int tmp_time = 0;
@@ -108,27 +114,35 @@ public:
 
                 if (altered_plan[i].action == "start" || altered_plan[i].action == "end" || altered_plan[i].action == "wait") {
                     current = altered_plan[i].position; //Go to the starting position of this plan_step
-
                     rotation = altered_plan[i].rotation;
+
+                    return true;
                 }
                 else if(altered_plan[i].action == "go") { //Else I move to the location between the 2 plan_steps
                     current.x = altered_plan[i].position.x + (static_cast<float>((time - tmp_time)) / static_cast<float>(altered_plan[i].duration)) * (altered_plan[i + 1].position.x - altered_plan[i].position.x); //There is always i+1 th action because if i-th action was end, i didnt get into this else branch
                     current.y = altered_plan[i].position.y + (static_cast<float>((time - tmp_time)) / static_cast<float>(altered_plan[i].duration)) * (altered_plan[i + 1].position.y - altered_plan[i].position.y); //
 
+                    return true;
                 }
                 else if (altered_plan[i].action == "turnLeft" || altered_plan[i].action == "turnRight") {
-
                     int signed_rotation = altered_plan[i].rotation + (static_cast<int>((static_cast<float>(time - tmp_time) / static_cast<float>(altered_plan[i].duration)) * (altered_plan[i].angle_to_rotate)));
                     while (signed_rotation < 0)
                         signed_rotation += 360;
 
                     rotation = signed_rotation % 360;
-                }
 
-                break;
+                    return true;
+                }
+                else if (altered_plan[i].action == "endLost") {
+                    current = altered_plan[i].position; //Go to the starting position of this plan_step
+                    rotation = altered_plan[i].rotation;
+
+                    return false;
+                }
             }
         }
 
+        //default shoudlnt happen
         return true;
     }
 
@@ -354,13 +368,30 @@ class Simulation {
         int time_counter_original = 0;
         int time_counter_altered = 0;        
         
-        //Errors can be noted ONLY when the agent finishes the action. Motivation is that he could make up for his mistake until the end of the plan_step action
-        for (size_t step = 0; step < altered.size(); step++) { 
-            time_counter_original += original[step].duration;
-            time_counter_altered += altered[step].duration;
+        int i_original = 0;
+        int i_altered = 0;
 
-            time_diffs_of_agents[agent_index].emplace_back(Time_diff_error(time_counter_altered, time_counter_altered - time_counter_original));
+        bool i_original_changed = true;
+
+        //Errors can be noted ONLY when the agent finishes the action. Motivation is that he could make up for his mistake until the end of the plan_step action
+        for (size_t i_altered = 0; i_altered < altered.size(); i_altered++) {
+            
+            //I wont fall out of range because max(original.id) == max(altered.id)
+            if (original[i_original].id < altered[i_altered].id) {
+
+                time_diffs_of_agents[agent_index].emplace_back(Time_diff_error(time_counter_altered, time_counter_altered - time_counter_original));
+                //move onto next
+                i_original++;
+                i_original_changed = true;
+            }
+
+            if(i_original_changed)
+                time_counter_original += original[i_original].duration;
+            time_counter_altered  += altered [i_altered ].duration; 
+
+            i_original_changed = false;
         }
+        time_diffs_of_agents[agent_index].emplace_back(Time_diff_error(time_counter_altered, time_counter_altered - time_counter_original));
 
         return time_counter_altered;
     }
@@ -409,7 +440,7 @@ class Simulation {
     */
     int get_angle_to_be_corrected(int actual_angle, int goal_angle) {
 
-        int actual_angle = normalize_angle(actual_angle);
+        actual_angle = normalize_angle(actual_angle);
         int angle_to_be_corrected = 0;
 
         if (goal_angle == 0) {
@@ -461,18 +492,20 @@ class Simulation {
             //for every plan_step
             for (size_t j = 0; j < original.size(); j++) {
 
-                if ((original[j].action == "turnLeft" || original[j].action == "turnRight")) {
-
-                    //angle_to_rotate to be used by this plan_step instruction
-                    int total_angle_to_rotate = 0;
-                    
+                if ((original[j].action == "turnLeft" || original[j].action == "turnRight")) {                                                         
 
                     if (tmp_error_angle_max == 0) {
                         //Do not change anything
-                        total_angle_to_rotate = original[j].angle_to_rotate;
+
+                        //angle_to_rotate to be used by this plan_step instruction
+                        int total_angle_to_rotate = original[j].angle_to_rotate;
 
                         plan_step curr = original[j];
-                        altered.emplace_back(plan_step(curr.position, curr.rotation, curr.action, curr.duration, curr.angle_to_rotate));
+                        altered.emplace_back(plan_step(curr.position, curr.rotation, curr.action, curr.duration, curr.id, curr.angle_to_rotate));
+
+                        //As I could have changed my direction, i need to set j+1 rotation to be correct for the future instruction
+                        original[j + 1].rotation = normalize_angle(total_angle_to_rotate + original[j].rotation);
+                        original[j + 1].position = original[j].position;
                     } 
                     else {                    
                         //for every step just roll the dices
@@ -486,30 +519,41 @@ class Simulation {
                         int closest_angle_to_altered = get_closest_90angle_or_lost(future_uncorrected_starting_rotation, tmp_error_angle_fatal);                        
                         if (closest_angle_to_altered == -1) {
                             //if the agent got lost
-
-
-
-
-
-                        }                        
-                        else {                                  
-                            //else if the agent did not get lost
-
-                            int angle_to_be_corrected = get_angle_to_be_corrected(future_uncorrected_starting_rotation, closest_angle_to_altered);
-                            total_angle_to_rotate = original[j].angle_to_rotate + chosen_relative_angle + angle_to_be_corrected;
-
-                            // std::abs(angle) that the agent has to travel on top of what the original plan told
-                            float added_angle = static_cast<float>(std::abs(chosen_relative_angle)) + static_cast<float>(std::abs(angle_to_be_corrected));
-                            int total_duration = original[j].duration + static_cast<int>((added_angle / 90.0) * static_cast<float>(original[j].duration));
-
                             plan_step curr = original[j];
-                            altered.emplace_back(plan_step(curr.position, curr.rotation, curr.action, total_duration, total_angle_to_rotate));
-                        }                   
-                    }
 
-                    //As I could have changed my direction, i need to set j+1 rotation to be correct for the future instruction
-                    original[j + 1].rotation = normalize_angle(total_angle_to_rotate + original[j].rotation);
-                    //original[j + 1].position = original[j].position;
+                            int total_angle_to_rotate = original[j].angle_to_rotate + chosen_relative_angle;
+
+                            altered.emplace_back(plan_step(curr.position, curr.rotation, curr.action, curr.duration, curr.id, total_angle_to_rotate));
+                            altered.emplace_back(plan_step(curr.position, normalize_angle(curr.rotation + total_angle_to_rotate), "endLost", 1000, curr.id));
+
+                            //Do not want any more plan_steps once it is lost
+                            break;
+                        }                        
+                        else { //else if the agent did not get lost                                                             
+
+                            // angle_to_be_corrected is an angle that the agent will have to travell in order to be corrected (heading on 0/90/180/270 axis)
+                            int angle_to_be_corrected = get_angle_to_be_corrected(future_uncorrected_starting_rotation, closest_angle_to_altered);
+                            
+                            plan_step curr = original[j];
+
+                            //first, uncorrected turn
+                            altered.emplace_back(plan_step(curr.position, curr.rotation, curr.action, curr.duration, curr.id, curr.angle_to_rotate + chosen_relative_angle));
+
+                            //optional turn in order to be corrected
+                            if (angle_to_be_corrected != 0) {
+
+                                int duration_of_correction_rotate = static_cast<int>((static_cast<float>(std::abs(angle_to_be_corrected)) / 90.0) * static_cast<float>(curr.duration));
+
+                                altered.emplace_back(plan_step(curr.position, normalize_angle(curr.rotation + curr.angle_to_rotate + chosen_relative_angle), curr.action, duration_of_correction_rotate, curr.id, angle_to_be_corrected));
+                            }
+                                
+
+                            //As I could have changed my direction, i need to set j+1 rotation to be correct for the future instruction
+                            int total_angle_to_rotate = original[j].angle_to_rotate + chosen_relative_angle + angle_to_be_corrected;
+                            original[j + 1].rotation = normalize_angle(original[j].rotation + total_angle_to_rotate);
+                            original[j + 1].position = original[j].position;
+                        }                   
+                    }                    
                 }
                 else if (original[j].action == "go") {                    
                     
@@ -753,6 +797,7 @@ class Simulation {
         int agt_duration;
         std::string agt_action;
         
+        int plan_step_id = 0;
         std::vector<plan_step> agt_plan;
 
         //loading plans
@@ -794,20 +839,22 @@ class Simulation {
 
             //And I ignore "SomeText"
 
-
-            auto normalized_plan_steps = get_normalized_plan_steps_from(plan_step(agt_position, agt_rotation, agt_action, agt_duration), solver_name, agt_plan, plan_step_durations);
+            //id==0 is irrelevant here
+            auto normalized_plan_steps = get_normalized_plan_steps_from(plan_step(agt_position, agt_rotation, agt_action, agt_duration, 0), solver_name, agt_plan, plan_step_durations, plan_step_id);
 
             //Merge them
-            for (size_t i = 0; i < normalized_plan_steps.size(); i++)
+            for (size_t i = 0; i < normalized_plan_steps.size(); i++) 
                 agt_plan.push_back(std::move(normalized_plan_steps[i]));
+                
                         
         }
     }
 
     /* Retuns vector of normalized plan_steps from plan_step step
     * plan_step_durations[0] == go_duration, plan_step_durations[1] == turn_duration, plan_step_durations[2] == wait_duration
+    * increments refference to plan_step_id
     */
-    std::vector<plan_step> get_normalized_plan_steps_from(plan_step&& step, const std::string& solver_name, const std::vector<plan_step>& preceding_normalized_agent_plan_step, const std::vector<int>& plan_step_durations) {
+    std::vector<plan_step> get_normalized_plan_steps_from(plan_step&& step, const std::string& solver_name, const std::vector<plan_step>& preceding_normalized_agent_plan_step, const std::vector<int>& plan_step_durations, int& plan_step_id) {
 
         std::vector<plan_step> ret;
 
@@ -825,7 +872,8 @@ class Simulation {
             if (step.action == "start") {
                 //no need to change anything except of duration
                 //here step.rotation == 0 always
-                ret.emplace_back(plan_step(step.position, step.rotation, "start", wait_duration));
+                ret.emplace_back(plan_step(step.position, step.rotation, "start", wait_duration, plan_step_id));
+                plan_step_id++;
                 return ret;
 
             }
@@ -839,50 +887,63 @@ class Simulation {
                 //need to rotate to 0 rotation angle
                 if (previous_step.rotation == 90) {
                     //it will be faster to turnLeft
-                    ret.emplace_back(plan_step(previous_step.position, previous_step.rotation, "turnLeft", turn_duration, -90));
+                    ret.emplace_back(plan_step(previous_step.position, previous_step.rotation, "turnLeft", turn_duration, plan_step_id, -90));
+                    plan_step_id++;
                 }
                 else {
                     //it will be faster or equaly as fast to turnRight
-                    for (size_t i = 0; ((previous_step.rotation + i) % 360) != 0 ; i += 90) 
-                        ret.emplace_back(plan_step(previous_step.position, (previous_step.rotation + i) % 360, "turnRight", turn_duration, 90));
+                    for (size_t i = 0; ((previous_step.rotation + i) % 360) != 0; i += 90) {
+                        ret.emplace_back(plan_step(previous_step.position, (previous_step.rotation + i) % 360, "turnRight", turn_duration, plan_step_id, 90));
+                        plan_step_id++;
+                    }                        
                 }
 
 
-                ret.emplace_back(plan_step(previous_step.position, 0, "end", wait_duration));
+                ret.emplace_back(plan_step(previous_step.position, 0, "end", wait_duration, plan_step_id));
+                plan_step_id++;
                 return ret;
 
             }
             else if (step.action == "waitB") {
                 //need to change the name to wait and correct the rotation field and duration
-                ret.emplace_back(plan_step(step.position, previous_step.rotation, "wait", wait_duration));
+                ret.emplace_back(plan_step(step.position, previous_step.rotation, "wait", wait_duration, plan_step_id));
+                plan_step_id++;
                 return ret;
 
             }
             else if (step.action == "goB") {
                 //change action name from goB to go and correct the rotation field and duration
-                ret.emplace_back(plan_step(step.position, previous_step.rotation, "go", go_duration));
+                ret.emplace_back(plan_step(step.position, previous_step.rotation, "go", go_duration, plan_step_id));
+                plan_step_id++;
                 return ret;
 
             }
             else if (step.action == "leftGo") {
                 //need to split into turnLeft and go instruction
-                ret.emplace_back(plan_step(step.position, previous_step.rotation, "turnLeft", turn_duration, -90));
-                ret.emplace_back(plan_step(step.position, (previous_step.rotation + 270) % 360, "go", go_duration));
+                ret.emplace_back(plan_step(step.position, previous_step.rotation, "turnLeft", turn_duration, plan_step_id, -90));
+                plan_step_id++;
+                ret.emplace_back(plan_step(step.position, (previous_step.rotation + 270) % 360, "go", go_duration, plan_step_id));
+                plan_step_id++;
                 return ret;
 
             }
             else if (step.action == "rightGo") {
                 //need to split into turnRight and go instruction
-                ret.emplace_back(plan_step(step.position, previous_step.rotation, "turnRight", turn_duration, 90));
-                ret.emplace_back(plan_step(step.position, (previous_step.rotation + 90) % 360, "go", go_duration));
+                ret.emplace_back(plan_step(step.position, previous_step.rotation, "turnRight", turn_duration, plan_step_id, 90));
+                plan_step_id++;
+                ret.emplace_back(plan_step(step.position, (previous_step.rotation + 90) % 360, "go", go_duration, plan_step_id));
+                plan_step_id++;
                 return ret;
 
             }
             else if (step.action == "backwardGo") {
                 //need to split into 2x turnRight and go instruction
-                ret.emplace_back(plan_step(step.position, previous_step.rotation, "turnRight", turn_duration, 90));
-                ret.emplace_back(plan_step(step.position, (previous_step.rotation + 90) % 360, "turnRight", turn_duration, 90));
-                ret.emplace_back(plan_step(step.position, (previous_step.rotation + 180) % 360, "go", go_duration));
+                ret.emplace_back(plan_step(step.position, previous_step.rotation, "turnRight", turn_duration, plan_step_id, 90));
+                plan_step_id++;
+                ret.emplace_back(plan_step(step.position, (previous_step.rotation + 90) % 360, "turnRight", turn_duration, plan_step_id, 90));
+                plan_step_id++;
+                ret.emplace_back(plan_step(step.position, (previous_step.rotation + 180) % 360, "go", go_duration, plan_step_id));
+                plan_step_id++;
                 return ret;
 
             }
@@ -896,37 +957,43 @@ class Simulation {
 
              if (step.action == "start") {
                  //here step.rotation == 0 always
-                 ret.emplace_back(plan_step(step.position, step.rotation, "start", wait_duration));
+                 ret.emplace_back(plan_step(step.position, step.rotation, "start", wait_duration, plan_step_id));
+                 plan_step_id++;
                  return ret;
 
              }
              else if (step.action == "end") {
                  //no need to change anything except of duration
-                 ret.emplace_back(plan_step(step.position, step.rotation, "end", wait_duration));
+                 ret.emplace_back(plan_step(step.position, step.rotation, "end", wait_duration, plan_step_id));
+                 plan_step_id++;
                  return ret;
 
              }
              else if (step.action == "waitC") {
                  //change action name from waitC to wait and duration                
-                 ret.emplace_back(plan_step(step.position, step.rotation, "wait", wait_duration));
+                 ret.emplace_back(plan_step(step.position, step.rotation, "wait", wait_duration, plan_step_id));
+                 plan_step_id++;
                  return ret;
 
              }
              else if (step.action == "goC") {
                  //change action name from goC to go and duration
-                 ret.emplace_back(plan_step(step.position, step.rotation, "go", go_duration));
+                 ret.emplace_back(plan_step(step.position, step.rotation, "go", go_duration, plan_step_id));
+                 plan_step_id++;
                  return ret;
 
              }
              else if (step.action == "turnLeft") {
                  //no need to change anything except of duration
-                 ret.emplace_back(plan_step(step.position, step.rotation, "turnLeft", turn_duration, -90));
+                 ret.emplace_back(plan_step(step.position, step.rotation, "turnLeft", turn_duration, plan_step_id, -90));
+                 plan_step_id++;
                  return ret;
 
              }
              else if (step.action == "turnRight") {
                  //no need to change anything except of duration
-                 ret.emplace_back(plan_step(step.position, step.rotation, "turnRight", turn_duration, 90));
+                 ret.emplace_back(plan_step(step.position, step.rotation, "turnRight", turn_duration, plan_step_id, 90));
+                 plan_step_id++;
                  return ret;
 
              }
@@ -937,7 +1004,8 @@ class Simulation {
 
             if (step.action == "start") {
                 //here step.rotation == 0 always
-                ret.emplace_back(plan_step(step.position, step.rotation, "start", wait_duration));
+                ret.emplace_back(plan_step(step.position, step.rotation, "start", wait_duration, plan_step_id));
+                plan_step_id++;
                 return ret;
             }
             else if (step.action == "end") {
@@ -946,22 +1014,27 @@ class Simulation {
 
                 if (previous_step.rotation == 90) {
                     //it will be faster to turnLeft
-                    ret.emplace_back(plan_step(previous_step.position, previous_step.rotation, "turnLeft", turn_duration, -90));
+                    ret.emplace_back(plan_step(previous_step.position, previous_step.rotation, "turnLeft", turn_duration, plan_step_id, -90));
+                    plan_step_id++;
                 }
                 else {
                     //it will be faster or equaly as fast to turnRight
-                    for (size_t i = 0; ((previous_step.rotation + i) % 360) != 0; i += 90)
-                        ret.emplace_back(plan_step(previous_step.position, (previous_step.rotation + i) % 360, "turnRight", turn_duration, 90));
+                    for (size_t i = 0; ((previous_step.rotation + i) % 360) != 0; i += 90) {
+                        ret.emplace_back(plan_step(previous_step.position, (previous_step.rotation + i) % 360, "turnRight", turn_duration, plan_step_id, 90));
+                        plan_step_id++;
+                    }                        
                 }
 
 
-                ret.emplace_back(plan_step(previous_step.position, 0, "end", wait_duration));
+                ret.emplace_back(plan_step(previous_step.position, 0, "end", wait_duration, plan_step_id));
+                plan_step_id++;
                 return ret;
 
             }
             else if (step.action == "wait") {
                 plan_step previous_step = preceding_normalized_agent_plan_step[preceding_normalized_agent_plan_step.size() - 1];
-                ret.emplace_back(plan_step(step.position, previous_step.rotation, "wait", wait_duration));
+                ret.emplace_back(plan_step(step.position, previous_step.rotation, "wait", wait_duration, plan_step_id));
+                plan_step_id++;
                 return ret;
 
             }
@@ -979,17 +1052,22 @@ class Simulation {
 
                  //rotate to the right angle
                  if (angle_delta == 90 || angle_delta == -270) {
-                     ret.emplace_back(plan_step(step.position, previous_step.rotation, "turnLeft", turn_duration, -90));
+                     ret.emplace_back(plan_step(step.position, previous_step.rotation, "turnLeft", turn_duration, plan_step_id, -90));
+                     plan_step_id++;
                  }
                  else if (angle_delta == -90 || angle_delta == 270) {
-                     ret.emplace_back(plan_step(step.position, previous_step.rotation, "turnRight", turn_duration, 90));
+                     ret.emplace_back(plan_step(step.position, previous_step.rotation, "turnRight", turn_duration, plan_step_id, 90));
+                     plan_step_id++;
                  }
                  else if (std::abs(angle_delta) == 180) {
-                     ret.emplace_back(plan_step(step.position, previous_step.rotation, "turnRight", turn_duration, 90));
-                     ret.emplace_back(plan_step(step.position, (previous_step.rotation + 90) % 360, "turnRight", turn_duration, 90));
+                     ret.emplace_back(plan_step(step.position, previous_step.rotation, "turnRight", turn_duration, plan_step_id, 90));
+                     plan_step_id++;
+                     ret.emplace_back(plan_step(step.position, (previous_step.rotation + 90) % 360, "turnRight", turn_duration, plan_step_id, 90));
+                     plan_step_id++;
                  }
 
-                 ret.emplace_back(plan_step(step.position, cardinal_to_angle(step.action), "go", go_duration));
+                 ret.emplace_back(plan_step(step.position, cardinal_to_angle(step.action), "go", go_duration, plan_step_id));
+                 plan_step_id++;
                  return ret;
             }          
         }
@@ -1092,20 +1170,25 @@ public:
         int idx = 0;
 
         for (size_t i = 0; i < agents.size(); i++) {
-            agents[i].move_to_time(time);
-            //Check if the time difference for agent[i] at time 'time' is too big
+            bool not_lost = agents[i].move_to_time(time);
 
-            idx = get_index_of_timediff_for_agent_at_time(i, time);
-            //Now in the idx is the index of the last step I have finished (-1 == I havent finished even the first one)
+            if (not_lost) {
+                //Check if the time difference for agent[i] at time 'time' is too big
 
-            if (idx == -1) //If I havent even finished first step (index 0), I cannot be too late/soon
-                agents[i].set_error_state(0);
-            else if (std::abs(time_diffs_of_agents[i][idx].time_diff) >= ERROR_TRESHOLD) //If I am too late/soon
-                agents[i].set_error_state(1);
-            else
-                agents[i].set_error_state(0); //Otherwise I am ok
+                idx = get_index_of_timediff_for_agent_at_time(i, time);
+                //Now in the idx is the index of the last step I have finished (-1 == I havent finished even the first one)
 
-
+                if (idx == -1) //If I havent even finished first step (index 0), I cannot be too late/soon
+                    agents[i].set_error_state(0);
+                else if (std::abs(time_diffs_of_agents[i][idx].time_diff) >= ERROR_TRESHOLD) //If I am too late/soon
+                    agents[i].set_error_state(1);
+                else
+                    agents[i].set_error_state(0); //Otherwise I am ok
+            }
+            else {
+                //5 means lost
+                agents[i].set_error_state(5);
+            }
         }
 
         if (time > agent_plan_max_length) {

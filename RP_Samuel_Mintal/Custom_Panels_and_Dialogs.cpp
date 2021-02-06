@@ -254,15 +254,20 @@
             agent_grid->SetCellValue(i, 0, const_agents[i].get_name());
             agent_grid->SetCellBackgroundColour(i, 0, Frame_with_simulation->panel_simulation->hex_to_wxColor(const_agents[i].get_color()));
 
-            if (const_agents[i].get_error_state()) {
+            if (const_agents[i].get_error_state() == 1) {
                 agent_grid->SetCellValue(i, 1, "Error");
                 agent_grid->SetCellBackgroundColour(i, 1, wxColor("red"));
                 agent_grid->SetCellBackgroundColour(i, 2, wxColor("red"));
             }
-            else {
+            else if (const_agents[i].get_error_state() == 0) {
                 agent_grid->SetCellValue(i, 1, "No Error");
                 agent_grid->SetCellBackgroundColour(i, 1, wxColor("green"));
                 agent_grid->SetCellBackgroundColour(i, 2, wxColor("green"));
+            }
+            else if (const_agents[i].get_error_state() == 5) {
+                agent_grid->SetCellValue(i, 1, "Lost");
+                agent_grid->SetCellBackgroundColour(i, 1, wxColor("black"));
+                agent_grid->SetCellBackgroundColour(i, 2, wxColor("black"));
             }
 
             agent_grid->SetCellValue(i, 2, std::to_string(Frame_with_simulation->simulation.get_time_diffs_of_agent_at_time(i, Frame_with_simulation->current_time_of_simulation)));
@@ -550,13 +555,15 @@
                 //Draw error indicating ring around him
                 dc.SetBrush(*wxTRANSPARENT_BRUSH);
 
-                if (agents[i].get_error_state()) 
-                    //If agent has time error  
-                    dc.SetPen(pen_error_ring_true);
-                else 
-                    //It doesnt have time error                    
-                    dc.SetPen(pen_error_ring_false);
-                
+                if (agents[i].get_error_state() == 0) 
+                    //If agent has NO time error  
+                    dc.SetPen(pen_error_ring_0);
+                else if (agents[i].get_error_state() == 1)
+                    //It has small time error                    
+                    dc.SetPen(pen_error_ring_1);
+                else if (agents[i].get_error_state() == 5)
+                    //It is lost
+                    dc.SetPen(pen_error_ring_5);
 
                 //Circle Around the agent displaying its errorness status
                 dc.DrawCircle(curr_center, agent_radius);

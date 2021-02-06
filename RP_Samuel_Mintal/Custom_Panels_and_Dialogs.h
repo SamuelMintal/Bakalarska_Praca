@@ -185,8 +185,9 @@ class Draw_Panel : public wxPanel
     wxPen pen_map_lines = wxPen(wxColor(0, 0, 0), 5);
     wxPen pen_map_obstacles = wxPen(wxColour(255, 255, 255), 5);
     wxPen pen_agents = wxPen(wxColour(255, 255, 255), 5);
-    wxPen pen_error_ring_true = wxPen(wxColour(255, 0, 0), 5);
-    wxPen pen_error_ring_false = wxPen(wxColour(0, 255, 0), 5);
+    wxPen pen_error_ring_0 = wxPen(wxColour(0, 255, 0), 5);
+    wxPen pen_error_ring_1 = wxPen(wxColour(255, 0, 0), 5);    
+    wxPen pen_error_ring_5 = wxPen(wxColour(0, 0, 0), 5);
     wxPen pen_rotation = wxPen(wxColour(220, 220, 220), 7);
 
     int hexChar_to_num(char c);
