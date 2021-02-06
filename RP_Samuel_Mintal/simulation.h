@@ -14,14 +14,23 @@ struct pos {
 
 class plan_step {
 public:
-    int duration;
+    //where it begins
     pos position;
     int rotation;
+
+    //how long the step lasts
+    int duration;    
+
+    //what the step does
     std::string action;
 
+    //if the step is rotation than this field tells how much to rotate
+    int angle_to_rotate;
 
-    plan_step(pos position, int rotation, std::string action, int duration) :
+
+    plan_step(pos position, int rotation, std::string action, int duration, int p_angle_to_rotate = 0) :
         position(position), rotation(rotation), action(action), duration(duration) {
+        angle_to_rotate = p_angle_to_rotate;
     }
 };
 
@@ -79,8 +88,10 @@ public:
         current = start;
     }
 
-    //moves agent to absolute time
-    void move_to_time(int time) {//time in miliseconds    
+    /* moves agent to absolute time
+    * returns true if agent successfully perfomed his action, false if not (got lost)
+    */
+    bool move_to_time(int time) {//time in miliseconds    
 
         if (time > altered_max_time) { //If I was supposed to move more than I can i stand at the end of my plan
 
@@ -100,25 +111,25 @@ public:
 
                     rotation = altered_plan[i].rotation;
                 }
-                else { //Else I move to the location between the 2 plan_steps
+                else if(altered_plan[i].action == "go") { //Else I move to the location between the 2 plan_steps
                     current.x = altered_plan[i].position.x + (static_cast<float>((time - tmp_time)) / static_cast<float>(altered_plan[i].duration)) * (altered_plan[i + 1].position.x - altered_plan[i].position.x); //There is always i+1 th action because if i-th action was end, i didnt get into this else branch
                     current.y = altered_plan[i].position.y + (static_cast<float>((time - tmp_time)) / static_cast<float>(altered_plan[i].duration)) * (altered_plan[i + 1].position.y - altered_plan[i].position.y); //
 
-
-                    int future_rotation = altered_plan[i + 1].rotation;
-                    int original_rotation = altered_plan[i].rotation;
-
-                    //necsessery for correct visualization
-                    if (altered_plan[i].action == "turnLeft" && original_rotation == 0)
-                        original_rotation = 360;
-                    else if (altered_plan[i].action == "turnRight" && future_rotation == 0)
-                        future_rotation = 360;
-
-                    rotation = (original_rotation + (static_cast<int>((static_cast<float>(time - tmp_time) / static_cast<float>(altered_plan[i].duration)) * (future_rotation - original_rotation))) % 360);
                 }
+                else if (altered_plan[i].action == "turnLeft" || altered_plan[i].action == "turnRight") {
+
+                    int signed_rotation = altered_plan[i].rotation + (static_cast<int>((static_cast<float>(time - tmp_time) / static_cast<float>(altered_plan[i].duration)) * (altered_plan[i].angle_to_rotate)));
+                    while (signed_rotation < 0)
+                        signed_rotation += 360;
+
+                    rotation = signed_rotation % 360;
+                }
+
                 break;
             }
         }
+
+        return true;
     }
 
     std::string get_color() {
@@ -227,6 +238,15 @@ class Simulation {
     /**************************************************************************************************************************************************************************/
     /************************************************************   ALTER PLANS   *********************************************************************************************/
     
+    /* Transforms any angle to range of 0 < angle <= 360
+    */
+    int normalize_angle(int angle) {
+        while (angle < 0)
+            angle += 360;
+        angle = angle % 360;
+
+        return angle;
+    }
 
     float normal_distribution(float sigma, float x) { //u == 0 always
 
@@ -236,12 +256,26 @@ class Simulation {
     float get_scaler(int sigma, int max) {
 
         float ret_scaler = 1;
+        float prev_scaler = 1;
+
         float f_sigma = static_cast<float>(sigma);
         float f_max = static_cast<float>(max);
 
         //while the possibility of max error occuring is (due to casting to int) zero, increase the scaler so it wouldn't be
         while (!static_cast<int>(normal_distribution(f_sigma, f_max) * ret_scaler)) {
+            prev_scaler = ret_scaler;
             ret_scaler *= 10;
+
+
+            //defense against overflow
+            //this will occur when the sigma is too low fro the specified max
+            //this implies that the max won't occur
+            if (ret_scaler < prev_scaler) {
+                ret_scaler = prev_scaler / 1000000;
+                break;
+            }
+                
+
         }
 
         return ret_scaler * 100; //*100 so the probabilities will be more accurate
@@ -260,13 +294,20 @@ class Simulation {
             //first is probablity * scaler casted into int
             //second is value of x
             prob_pair = std::make_pair(static_cast<int>(normal_distribution(sigma, x) * speed_scaler), x);
-            ret_sum += prob_pair.first;
-            map.push_back(prob_pair);
-            if (x != 0) {
-                ret_sum += prob_pair.first;
-                prob_pair.second = prob_pair.second * (-1); //normal distribution is symetrical when u == 0
-                map.push_back(prob_pair);
+
+            //if the overflow in get_scaler has occured I won't be able to register some of the values near the ned of the spectrum
+            if (prob_pair.first == 0) {
+                break;
             }
+            else {
+                ret_sum += prob_pair.first;
+                map.push_back(prob_pair);
+                if (x != 0) {
+                    ret_sum += prob_pair.first;
+                    prob_pair.second = prob_pair.second * (-1); //normal distribution is symetrical when u == 0
+                    map.push_back(prob_pair);
+                }
+            }                
         }
 
         return ret_sum;
@@ -312,8 +353,9 @@ class Simulation {
 
         int time_counter_original = 0;
         int time_counter_altered = 0;        
-
-        for (size_t step = 0; step < altered.size(); step++) { //Errors can be noted ONLY when the agent finishes the action. Motivation is that he could make up for his mistake until the end of the plan_step action
+        
+        //Errors can be noted ONLY when the agent finishes the action. Motivation is that he could make up for his mistake until the end of the plan_step action
+        for (size_t step = 0; step < altered.size(); step++) { 
             time_counter_original += original[step].duration;
             time_counter_altered += altered[step].duration;
 
@@ -323,17 +365,84 @@ class Simulation {
         return time_counter_altered;
     }
 
+    /*
+    * returns -1 when lost, or one of 0,90,180,270 if not
+    */
+    int get_closest_90angle_or_lost(int angle, int fatal_angle) {
+        
+        //correct the angle so it spans 0 <= angle < 360
+        angle = normalize_angle(angle);
+        
+        int delta_to_0 = std::min(360 - angle, angle);
+        int delta_to_90 = std::abs(angle - 90);
+        int delta_to_180 = std::abs(angle - 180);
+        int delta_to_270 = std::abs(angle - 270);
+        
+        int min_delta;
+        int angle_of_minimal_delta;
 
-    void alter_plans_of_agents(int from, int to) { //weird indexes imply that this function can be used to alter one or all of the agents plans ///////////////////////////////////////// IS IGNORING TURNING ANGLES NEED TO FINISH
+        min_delta = delta_to_0;
+        angle_of_minimal_delta = 0;
+        if (delta_to_90 < min_delta) {
+            min_delta = delta_to_90;
+            angle_of_minimal_delta = 90;
+        }
+        if (delta_to_180 < min_delta) {
+            min_delta = delta_to_180;
+            angle_of_minimal_delta = 180;
+        }
+        if (delta_to_270 < min_delta) {
+            min_delta = delta_to_270;
+            angle_of_minimal_delta = 270;
+        }
 
+        if (min_delta < fatal_angle) {
+            return angle_of_minimal_delta;
+        }
+        else {
+            return -1;
+        }
+    }
+
+    /* goal_angle is normalized, actual_angle doesn't have to be
+    * returns signed number representing how many more degrees the agent will have to rotate to correct itself
+    */
+    int get_angle_to_be_corrected(int actual_angle, int goal_angle) {
+
+        int actual_angle = normalize_angle(actual_angle);
+        int angle_to_be_corrected = 0;
+
+        if (goal_angle == 0) {
+            //Trouble caused by that top angle is both 0 and 360 but I take it as 0
+
+            if (actual_angle < 180)
+                angle_to_be_corrected = -actual_angle;
+            else
+                angle_to_be_corrected = 360 - actual_angle;
+        }
+        else /*closest_angle == 90/180/270*/ {
+
+            angle_to_be_corrected = goal_angle - actual_angle;
+        }
+
+        return angle_to_be_corrected;
+    }
+
+    //weird indexes imply that this function can be used to alter one or all of the agents plans
+    void alter_plans_of_agents(int from, int to) {  
 
         const float speed_precision = 100;   // n in  miliseconds ,where agent can be faster/slower x*n miliseconds and x*n <= max_error_speed
         const float angle_precision = 1;     // n in  degrees     ,where agent can be rotated badly x*n degrees     and x*n <= max_error_agnle          
 
-
         //for every agent            
         for (size_t i = from; i < to; i++) { 
-            std::vector<plan_step> altered = agents[i].get_original_plan();
+
+            //Despite it's name, this original plan may get deformed while making the altered one 
+            //Namely when the rotations change the plan
+            std::vector<plan_step> original = agents[i].get_original_plan();            
+
+            //the plan I am making and eventually will set as the agent's altered one
+            std::vector<plan_step> altered;
 
             auto err_vec = agents[i].get_err_vector();
             int tmp_error_speed_max = err_vec[0];
@@ -342,7 +451,7 @@ class Simulation {
             int tmp_error_angle_sigma = err_vec[3];
             int tmp_error_angle_fatal = err_vec[4];
             
-            std::vector<std::pair<int, float>> speed_prob_map; // maps probability*scale to relative change to plan_step action duration
+            std::vector<std::pair<int, float>> speed_prob_map; // maps probability*scale [int] to relative change to plan_step action duration or action rotation
             std::vector<std::pair<int, float>> angle_prob_map; // scale is chosen by init_prob_map and I don't care about its concrete value
 
             uint64_t speed_prob_sum = init_prob_map(speed_prob_map, speed_precision, tmp_error_speed_max, tmp_error_speed_sigma);
@@ -350,28 +459,101 @@ class Simulation {
            
 
             //for every plan_step
-            for (size_t j = 0; j < altered.size(); j++) {
-                if ((altered[j].action == "turnLeft" || altered[j].action == "turnRight") && tmp_error_angle_max != 0) {
-                    //for every step just roll the dices
-                    size_t rolled_pair_index = roll_pair_and_get_its_index(angle_prob_map, angle_prob_sum, i, j);
+            for (size_t j = 0; j < original.size(); j++) {
 
-                    //alter the rotation
+                if ((original[j].action == "turnLeft" || original[j].action == "turnRight")) {
 
-
-                    //TODO
-                    //TODO
-                    //TODO
-
-
-                }
-                else if (altered[j].action == "go" && tmp_error_speed_max != 0) {
-                    //for every step just roll the dices
-                    size_t rolled_pair_index = roll_pair_and_get_its_index(speed_prob_map, speed_prob_sum, i, j);
+                    //angle_to_rotate to be used by this plan_step instruction
+                    int total_angle_to_rotate = 0;
                     
-                    //alter the duration
-                    altered[j].duration = altered[j].duration + speed_prob_map[rolled_pair_index].second;
+
+                    if (tmp_error_angle_max == 0) {
+                        //Do not change anything
+                        total_angle_to_rotate = original[j].angle_to_rotate;
+
+                        plan_step curr = original[j];
+                        altered.emplace_back(plan_step(curr.position, curr.rotation, curr.action, curr.duration, curr.angle_to_rotate));
+                    } 
+                    else {                    
+                        //for every step just roll the dices
+                        size_t rolled_pair_index = roll_pair_and_get_its_index(angle_prob_map, angle_prob_sum, i, j);
+                        int chosen_relative_angle = static_cast<int>(angle_prob_map[rolled_pair_index].second);
+
+                        // future_uncorrected_rotation stands for the yet uncorrected starting rotation for the next plan_step
+                        int future_uncorrected_starting_rotation = original[j].rotation + original[j].angle_to_rotate + chosen_relative_angle;
+
+                        //stands for the closest 0/90/180/270 axis to the future_uncorrected_starting_rotation, or if -1 stands for that the agent has lost due to the current rotation
+                        int closest_angle_to_altered = get_closest_90angle_or_lost(future_uncorrected_starting_rotation, tmp_error_angle_fatal);                        
+                        if (closest_angle_to_altered == -1) {
+                            //if the agent got lost
+
+
+
+
+
+                        }                        
+                        else {                                  
+                            //else if the agent did not get lost
+
+                            int angle_to_be_corrected = get_angle_to_be_corrected(future_uncorrected_starting_rotation, closest_angle_to_altered);
+                            total_angle_to_rotate = original[j].angle_to_rotate + chosen_relative_angle + angle_to_be_corrected;
+
+                            // std::abs(angle) that the agent has to travel on top of what the original plan told
+                            float added_angle = static_cast<float>(std::abs(chosen_relative_angle)) + static_cast<float>(std::abs(angle_to_be_corrected));
+                            int total_duration = original[j].duration + static_cast<int>((added_angle / 90.0) * static_cast<float>(original[j].duration));
+
+                            plan_step curr = original[j];
+                            altered.emplace_back(plan_step(curr.position, curr.rotation, curr.action, total_duration, total_angle_to_rotate));
+                        }                   
+                    }
+
+                    //As I could have changed my direction, i need to set j+1 rotation to be correct for the future instruction
+                    original[j + 1].rotation = normalize_angle(total_angle_to_rotate + original[j].rotation);
+                    //original[j + 1].position = original[j].position;
                 }
-                //and the rest (start, end, wait) wont be affected
+                else if (original[j].action == "go") {                    
+                    
+                    plan_step curr = original[j];
+
+                    if (tmp_error_speed_max != 0) {                        
+                        //roll the dices
+                        size_t rolled_pair_index = roll_pair_and_get_its_index(speed_prob_map, speed_prob_sum, i, j);
+                        //alter duration
+                        curr.duration = original[j].duration + static_cast<int>(speed_prob_map[rolled_pair_index].second);                        
+                    }
+
+                    altered.push_back(curr);
+
+                    //correct the next step's newly potentionally uncorrect position                    
+                    pos future_step_pos = original[j].position;
+
+                    if (curr.rotation == 0)
+                        future_step_pos.y -= 2;
+                    else if (curr.rotation == 90)
+                        future_step_pos.x += 2;
+                    else if (curr.rotation == 180)
+                        future_step_pos.y += 2;
+                    else if (curr.rotation == 270)
+                        future_step_pos.x -= 2;
+
+                    original[j + 1].position = future_step_pos;
+                    original[j + 1].rotation = original[j].rotation;
+                    
+                }
+                else if(original[j].action == "wait"){
+                    //promote the changes
+                    plan_step curr = original[j];
+                    original[j + 1].position = curr.position;
+                    original[j + 1].rotation = curr.rotation;
+
+                    altered.push_back(curr);
+                }
+                else {
+                    //start and end just copyy
+                    altered.push_back(original[j]);
+                }
+
+            //end of plan_steps altering for cycle    
             }
 
 
@@ -573,14 +755,16 @@ class Simulation {
         
         std::vector<plan_step> agt_plan;
 
-
-        while (std::getline(myfile, line)) { //loading plans
+        //loading plans
+        while (std::getline(myfile, line)) { 
 
             //If I have finished loading the agent
             if (line == "") {
-                agents_vector[agt_idx].set_original_plan(std::move(agt_plan)); //Give agent its plan
-                agt_plan.clear(); //Get it ready for another round
+                //Give agent its plan
+                agents_vector[agt_idx].set_original_plan(std::move(agt_plan)); 
 
+                //Get it ready for another round
+                agt_plan.clear(); 
                 ++agt_idx;
                 continue;
             }
@@ -590,11 +774,9 @@ class Simulation {
             //Skip AgentNO
             std::getline(iss, token, ' '); 
 
-
             //Get the vertex num
             std::getline(iss, token, ' '); 
             agt_position = num_to_vertex[std::stoi(token)];
-
 
             // Get rotation
             std::getline(iss, token, ' ');
@@ -603,15 +785,12 @@ class Simulation {
             else
                 agt_rotation = std::stoi(token);
 
-
             // Get action
             std::getline(iss, agt_action, ' ');
-
 
             // Get duration
             std::getline(iss, token, ' ');
             agt_duration = std::stoi(token);
-
 
             //And I ignore "SomeText"
 
@@ -660,12 +839,12 @@ class Simulation {
                 //need to rotate to 0 rotation angle
                 if (previous_step.rotation == 90) {
                     //it will be faster to turnLeft
-                    ret.emplace_back(plan_step(previous_step.position, previous_step.rotation, "turnLeft", turn_duration));
+                    ret.emplace_back(plan_step(previous_step.position, previous_step.rotation, "turnLeft", turn_duration, -90));
                 }
                 else {
                     //it will be faster or equaly as fast to turnRight
                     for (size_t i = 0; ((previous_step.rotation + i) % 360) != 0 ; i += 90) 
-                        ret.emplace_back(plan_step(previous_step.position, (previous_step.rotation + i) % 360, "turnRight", turn_duration));
+                        ret.emplace_back(plan_step(previous_step.position, (previous_step.rotation + i) % 360, "turnRight", turn_duration, 90));
                 }
 
 
@@ -687,22 +866,22 @@ class Simulation {
             }
             else if (step.action == "leftGo") {
                 //need to split into turnLeft and go instruction
-                ret.emplace_back(plan_step(step.position, previous_step.rotation, "turnLeft", turn_duration));
+                ret.emplace_back(plan_step(step.position, previous_step.rotation, "turnLeft", turn_duration, -90));
                 ret.emplace_back(plan_step(step.position, (previous_step.rotation + 270) % 360, "go", go_duration));
                 return ret;
 
             }
             else if (step.action == "rightGo") {
                 //need to split into turnRight and go instruction
-                ret.emplace_back(plan_step(step.position, previous_step.rotation, "turnRight", turn_duration));
+                ret.emplace_back(plan_step(step.position, previous_step.rotation, "turnRight", turn_duration, 90));
                 ret.emplace_back(plan_step(step.position, (previous_step.rotation + 90) % 360, "go", go_duration));
                 return ret;
 
             }
             else if (step.action == "backwardGo") {
                 //need to split into 2x turnRight and go instruction
-                ret.emplace_back(plan_step(step.position, previous_step.rotation, "turnRight", turn_duration));
-                ret.emplace_back(plan_step(step.position, (previous_step.rotation + 90) % 360, "turnRight", turn_duration));
+                ret.emplace_back(plan_step(step.position, previous_step.rotation, "turnRight", turn_duration, 90));
+                ret.emplace_back(plan_step(step.position, (previous_step.rotation + 90) % 360, "turnRight", turn_duration, 90));
                 ret.emplace_back(plan_step(step.position, (previous_step.rotation + 180) % 360, "go", go_duration));
                 return ret;
 
@@ -741,13 +920,13 @@ class Simulation {
              }
              else if (step.action == "turnLeft") {
                  //no need to change anything except of duration
-                 ret.emplace_back(plan_step(step.position, step.rotation, "turnLeft", turn_duration));
+                 ret.emplace_back(plan_step(step.position, step.rotation, "turnLeft", turn_duration, -90));
                  return ret;
 
              }
              else if (step.action == "turnRight") {
                  //no need to change anything except of duration
-                 ret.emplace_back(plan_step(step.position, step.rotation, "turnRight", turn_duration));
+                 ret.emplace_back(plan_step(step.position, step.rotation, "turnRight", turn_duration, 90));
                  return ret;
 
              }
@@ -767,12 +946,12 @@ class Simulation {
 
                 if (previous_step.rotation == 90) {
                     //it will be faster to turnLeft
-                    ret.emplace_back(plan_step(previous_step.position, previous_step.rotation, "turnLeft", turn_duration));
+                    ret.emplace_back(plan_step(previous_step.position, previous_step.rotation, "turnLeft", turn_duration, -90));
                 }
                 else {
                     //it will be faster or equaly as fast to turnRight
                     for (size_t i = 0; ((previous_step.rotation + i) % 360) != 0; i += 90)
-                        ret.emplace_back(plan_step(previous_step.position, (previous_step.rotation + i) % 360, "turnRight", turn_duration));
+                        ret.emplace_back(plan_step(previous_step.position, (previous_step.rotation + i) % 360, "turnRight", turn_duration, 90));
                 }
 
 
@@ -800,14 +979,14 @@ class Simulation {
 
                  //rotate to the right angle
                  if (angle_delta == 90 || angle_delta == -270) {
-                     ret.emplace_back(plan_step(step.position, previous_step.rotation, "turnLeft", turn_duration));
+                     ret.emplace_back(plan_step(step.position, previous_step.rotation, "turnLeft", turn_duration, -90));
                  }
                  else if (angle_delta == -90 || angle_delta == 270) {
-                     ret.emplace_back(plan_step(step.position, previous_step.rotation, "turnRight", turn_duration));
+                     ret.emplace_back(plan_step(step.position, previous_step.rotation, "turnRight", turn_duration, 90));
                  }
                  else if (std::abs(angle_delta) == 180) {
-                     ret.emplace_back(plan_step(step.position, previous_step.rotation, "turnRight", turn_duration));
-                     ret.emplace_back(plan_step(step.position, (previous_step.rotation + 90) % 360, "turnRight", turn_duration));
+                     ret.emplace_back(plan_step(step.position, previous_step.rotation, "turnRight", turn_duration, 90));
+                     ret.emplace_back(plan_step(step.position, (previous_step.rotation + 90) % 360, "turnRight", turn_duration, 90));
                  }
 
                  ret.emplace_back(plan_step(step.position, cardinal_to_angle(step.action), "go", go_duration));
@@ -892,7 +1071,6 @@ public:
             time_diffs_of_agents.resize(agents.size());
 
         alter_plans_of_agents(0, agents.size());
-
         update_agent_plan_max_length();
     }
 
