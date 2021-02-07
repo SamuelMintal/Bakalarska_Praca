@@ -151,6 +151,7 @@
   <ItemGroup>
     <ClCompile Include="Custom_Panels_and_Dialogs.cpp" />
     <ClCompile Include="MyApp_MyFrame.cpp" />
+    <ClCompile Include="simulation.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Custom_Panels_and_Dialogs.h" />
