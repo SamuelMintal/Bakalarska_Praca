@@ -179,9 +179,10 @@ class Draw_Panel : public wxPanel
 {
     MyFrame* MyFrame_with_simulation;
 
-    const int agent_radius = 20; //
-    const int offset = 50;       //
-    int scale = 50;              // Parameters for map drawing  
+    const int agent_radius = 20;            // Parameters for map drawing 
+    int scale = 50;                         // 
+    const int offset = scale + agent_radius;//
+
     wxPen pen_map_lines = wxPen(wxColor(0, 0, 0), 5);
     wxPen pen_map_obstacles = wxPen(wxColour(255, 255, 255), 5);
     wxPen pen_agents = wxPen(wxColour(255, 255, 255), 5);

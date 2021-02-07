@@ -252,6 +252,29 @@ class Simulation {
     /**************************************************************************************************************************************************************************/
     /************************************************************   ALTER PLANS   *********************************************************************************************/
     
+    bool is_position_out_of_map(const pos& position) {
+
+        if (map.size() == 0)
+            return true;
+
+
+        if ((position.y < map.size()) && (position.y >= 0) && (position.x < map[0].size()) && (position.x >= 0))
+            return false;
+        else
+            return true;
+    }
+
+    /* Also checks if position is within the map
+    * if it's not, it returns true, because the agent should be able to get there, same as with obstacle
+    */
+    bool is_obstacle_on_position(const pos& position) {
+
+        if (is_position_out_of_map(position))
+            return false;
+        else
+            return (map[position.y][position.x] == '@');
+    }
+
     /* Transforms any angle to range of 0 < angle <= 360
     */
     int normalize_angle(int angle) {
@@ -569,7 +592,7 @@ class Simulation {
                     altered.push_back(curr);
 
                     //correct the next step's newly potentionally uncorrect position                    
-                    pos future_step_pos = original[j].position;
+                    pos future_step_pos = curr.position;
 
                     if (curr.rotation == 0)
                         future_step_pos.y -= 2;
@@ -580,9 +603,19 @@ class Simulation {
                     else if (curr.rotation == 270)
                         future_step_pos.x -= 2;
 
-                    original[j + 1].position = future_step_pos;
-                    original[j + 1].rotation = original[j].rotation;
-                    
+                    //if I will get lost
+                    if (is_position_out_of_map(future_step_pos) || is_obstacle_on_position(future_step_pos)) {
+
+                        altered.emplace_back(plan_step(future_step_pos, curr.rotation, "endLost", 1000, curr.id));
+
+                        //Do not want any more plan_steps once it is lost
+                        break;  
+                    }
+                    else {
+
+                        original[j + 1].position = future_step_pos;
+                        original[j + 1].rotation = original[j].rotation;
+                    }                    
                 }
                 else if(original[j].action == "wait"){
                     //promote the changes

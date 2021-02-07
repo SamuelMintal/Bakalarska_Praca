@@ -506,7 +506,7 @@
         if (map.size() > 0) {            
 
             //calculating scale for current panel size
-            scale = std::min((dc.GetSize().y - 20 - offset) / (map.size() - 1), (dc.GetSize().x - 20 - offset) / (map[0].size() - 1));
+            scale = std::min((dc.GetSize().y - offset * 2) / (map.size() - 1), (dc.GetSize().x - offset * 2) / (map[0].size() - 1));
             
             horizontal_length = (map[0].size() - 1) * scale;
             vertical_length = (map.size() - 1) * scale;
