@@ -191,8 +191,9 @@ bool Simulation::is_obstacle_on_position(const pos& position) {
     if (is_position_out_of_map(position))
         return false;
     else
-        return (map[position.y][position.x] == '@');
+        return (map[static_cast<int>(position.y)][static_cast<int>(position.x)] == '@');
 }
+
 
 /* Transforms any angle to range of 0 < angle <= 360
 */
@@ -208,7 +209,7 @@ int Simulation::normalize_angle(int angle) {
 */
 float Simulation::normal_distribution(float sigma, float x) { 
 
-    return (1 / (sigma * sqrtf(2 * 3.14159))) * pow(2.71828, -0.5 * pow(x / sigma, 2));
+    return (1 / (sigma * sqrtf(2 * static_cast<float>(3.14159)))) * static_cast<float>(pow(2.71828, -0.5 * pow(x / sigma, 2)));
 }
 
 float Simulation::get_scaler(int sigma, int max) {
@@ -252,7 +253,7 @@ uint64_t Simulation::init_prob_map(std::vector<std::pair<int, float>>& map, floa
     for (float x = 0; x <= max; x += precision) {
         //first is probablity * scaler casted into int
         //second is value of x
-        prob_pair = std::make_pair(static_cast<int>(normal_distribution(sigma, x) * speed_scaler), x);
+        prob_pair = std::make_pair(static_cast<int>(normal_distribution(static_cast<float>(sigma), x) * speed_scaler), x);
 
         //if the overflow in get_scaler has occured I won't be able to register some of the values near the ned of the spectrum
         if (prob_pair.first == 0) {
@@ -282,7 +283,7 @@ size_t Simulation::roll_pair_and_get_its_index(const std::vector<std::pair<int, 
     //rolling random prob_value
     srand(j + i * (11071998 * j * j));
     uint64_t r1 = rand();
-    srand(j * (23072001 * r1 * j));
+    srand(static_cast<unsigned int>(j * (23072001 * r1 * j)));
     uint64_t r2 = rand();
     uint64_t chosen_prob_value = (r1 * r2) % prob_sum;
 
@@ -412,7 +413,7 @@ void Simulation::alter_plans_of_agents(int from, int to) {
     const float angle_precision = 1;     // n in  degrees     ,where agent can be rotated badly by x*n degrees     and x*n <= max_error_agnle          
 
     //for every specified agent            
-    for (size_t i = from; i < to; i++) {
+    for (int i = from; i < to; i++) {
 
         //Despite it's name, this original plan may get deformed while making the altered one 
         //Namely when the rotations change the plan

@@ -158,7 +158,7 @@
         std::vector<int> listbox_indexes;
         int count = list_box->GetSelections(listbox_wx_indexes);
 
-        for (size_t i = 0; i < count; i++)
+        for (int i = 0; i < count; i++)
             listbox_indexes.push_back(listbox_wx_indexes[i]);
 
 
