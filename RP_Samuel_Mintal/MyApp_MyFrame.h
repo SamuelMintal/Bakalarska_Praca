@@ -5,6 +5,7 @@
 #include <wx/wx.h>
 #endif
 
+//#include "RP_icon.XPM" - TODO, nefunguje
 
 #include "simulation.h"
 #include "Enums.h"

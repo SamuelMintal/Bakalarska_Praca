@@ -159,6 +159,9 @@
     <ClInclude Include="MyApp_MyFrame.h" />
     <ClInclude Include="simulation.h" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="RP_icon.XPM" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
