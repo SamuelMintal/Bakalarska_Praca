@@ -61,6 +61,9 @@ bool Agent::move_to_time(int time) {
                 current.x = altered_plan[i].position.x + (static_cast<float>((time - tmp_time)) / static_cast<float>(altered_plan[i].duration)) * (altered_plan[i + 1].position.x - altered_plan[i].position.x); //There is always i+1 th action because if i-th action was end, i didnt get into this else branch
                 current.y = altered_plan[i].position.y + (static_cast<float>((time - tmp_time)) / static_cast<float>(altered_plan[i].duration)) * (altered_plan[i + 1].position.y - altered_plan[i].position.y); //
 
+                //to avoid "direction arrows" being badly orineted due to short turn time or fast simulation step time
+                rotation = altered_plan[i].rotation;
+
                 return true;
             }
             else if (altered_plan[i].action == "turnLeft" || altered_plan[i].action == "turnRight") {
