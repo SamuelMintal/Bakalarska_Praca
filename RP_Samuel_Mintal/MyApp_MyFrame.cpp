@@ -18,7 +18,7 @@ bool MyApp::OnInit()
 }
 
 MyFrame::MyFrame()
-    : wxFrame(NULL, wxID_ANY, "MAPF simulator")
+    : wxFrame(NULL, wxID_ANY, "MAPF Errors Simulator")
 {
     //setting up panels in frame
     panel_buttons = new Buttons_Panel(this, this, ID_panel_buttons, wxDefaultPosition, wxSize(100, 100));

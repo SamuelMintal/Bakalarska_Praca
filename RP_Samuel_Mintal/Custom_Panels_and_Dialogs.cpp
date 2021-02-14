@@ -17,27 +17,27 @@
         //Make input fields sizer and put all of input fields into him
         input_fields_sizer = new wxBoxSizer(wxVERTICAL);
 
-        txt_speed_max = new wxStaticText(this, wxID_ANY, "maximum speed error:");
+        txt_speed_max = new wxStaticText(this, wxID_ANY, "Maximum speed error [ms]:");
         txtctrl_speed_max = new wxTextCtrl(this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0L, wxTextValidator(wxFILTER_NUMERIC)); // only accepts numbers       
         input_fields_sizer->Add(txt_speed_max, 1, wxEXPAND);
         input_fields_sizer->Add(txtctrl_speed_max, 1, wxEXPAND);
 
-        txt_speed_sigma = new wxStaticText(this, wxID_ANY, "Sigma for normal error distribution:", wxDefaultPosition, wxDefaultSize);
+        txt_speed_sigma = new wxStaticText(this, wxID_ANY, "Sigma for normal distribution of speed error:", wxDefaultPosition, wxDefaultSize);
         txtctrl_speed_sigma = new wxTextCtrl(this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0L, wxTextValidator(wxFILTER_NUMERIC)); // only accepts numbers
         input_fields_sizer->Add(txt_speed_sigma, 1, wxEXPAND);
         input_fields_sizer->Add(txtctrl_speed_sigma, 1, wxEXPAND);
 
-        txt_angle_max = new wxStaticText(this, wxID_ANY, "maximum angle error:");
+        txt_angle_max = new wxStaticText(this, wxID_ANY, "Maximum angle error [degrees]:");
         txtctrl_angle_max = new wxTextCtrl(this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0L, wxTextValidator(wxFILTER_NUMERIC)); // only accepts numbers
         input_fields_sizer->Add(txt_angle_max, 1, wxEXPAND);
         input_fields_sizer->Add(txtctrl_angle_max, 1, wxEXPAND);
 
-        txt_angle_sigma = new wxStaticText(this, wxID_ANY, "Sigma for normal error distribution::");
+        txt_angle_sigma = new wxStaticText(this, wxID_ANY, "Sigma for normal distribution of angle error:");
         txtctrl_angle_sigma = new wxTextCtrl(this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0L, wxTextValidator(wxFILTER_NUMERIC)); // only accepts numbers
         input_fields_sizer->Add(txt_angle_sigma, 1, wxEXPAND);
         input_fields_sizer->Add(txtctrl_angle_sigma, 1, wxEXPAND);
 
-        txt_angle_fatal = new wxStaticText(this, wxID_ANY, "Fatal angle:");
+        txt_angle_fatal = new wxStaticText(this, wxID_ANY, "Fatal angle [degrees]:");
         txtctrl_angle_fatal = new wxTextCtrl(this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0L, wxTextValidator(wxFILTER_NUMERIC)); // only accepts numbers
         input_fields_sizer->Add(txt_angle_fatal, 1, wxEXPAND);
         input_fields_sizer->Add(txtctrl_angle_fatal, 1, wxEXPAND);
