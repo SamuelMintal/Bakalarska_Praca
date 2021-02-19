@@ -86,6 +86,7 @@ public:
     /* moves agent to absolute time
     * parameter time is in miliseconds
     * returns true if agent successfully perfomed his action, false if not (got lost)
+    * This function changes agent's current and rotation variables.
     */
     bool move_to_time(int time);
 
