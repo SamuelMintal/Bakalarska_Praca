@@ -91,13 +91,13 @@ public:
     bool move_to_time(int time);
 
     std::string get_color();
-    std::string get_name();
+    std::string get_name() const;
     pos get_current_position();
     int get_rotation();
     auto get_altered_plan_length();
-    auto get_altered_plan();
+    std::vector<plan_step> get_altered_plan() const;
     std::vector<int> get_err_vector();
-    auto get_original_plan();    
+    std::vector<plan_step> get_original_plan() const;
     int get_error_state();
 
     void set_error_state(int err);

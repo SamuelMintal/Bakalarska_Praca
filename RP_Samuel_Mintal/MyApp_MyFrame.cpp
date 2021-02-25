@@ -35,7 +35,7 @@ MyFrame::MyFrame()
     //Group them into the main (vertical) sizer
     sizer_frame_vertical_final = new wxBoxSizer(wxVERTICAL);
     sizer_frame_vertical_final->Add(sizer_frame_horizontal, 5, wxEXPAND | wxALL, 10);
-    sizer_frame_vertical_final->Add(panel_extended_controls, 1, wxEXPAND | wxRIGHT | wxLEFT | wxDOWN, 20);
+    sizer_frame_vertical_final->Add(panel_extended_controls, 2, wxEXPAND | wxRIGHT | wxLEFT | wxDOWN, 20);
 
     //at last set frame sizer to fit
     SetSizerAndFit(sizer_frame_vertical_final);

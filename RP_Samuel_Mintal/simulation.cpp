@@ -94,7 +94,7 @@ std::string Agent::get_color() {
     return color;
 }
 
-std::string Agent::get_name() {
+std::string Agent::get_name() const {
     return name;
 }
 
@@ -110,7 +110,7 @@ auto Agent::get_altered_plan_length() {
     return altered_max_time;
 }
 
-auto Agent::get_altered_plan() {   
+std::vector<plan_step>  Agent::get_altered_plan() const {
     return altered_plan;
 }
 
@@ -119,7 +119,7 @@ std::vector<int> Agent::get_err_vector() {
     return ret;
 }
 
-auto Agent::get_original_plan() {    
+std::vector<plan_step> Agent::get_original_plan() const {    
     return original_plan;
 }
 

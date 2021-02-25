@@ -37,6 +37,7 @@ private:
     friend class Agent_Info_Panel;
     friend class Extended_controls_panel;
     friend class Buttons_Panel;
+    friend class Agents_Plans_Panel;
 
     void OnStop(wxCommandEvent& event);
     void On_button_load_plan(wxCommandEvent& event);    

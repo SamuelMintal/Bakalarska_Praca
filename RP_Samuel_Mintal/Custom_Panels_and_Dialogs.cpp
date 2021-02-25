@@ -302,8 +302,16 @@
         extended_controls_panel_sizer = new wxBoxSizer(wxVERTICAL);
                
         slider_current_time_of_simulation = new wxSlider(this, wxID_ANY, 0, 0, Frame_with_simulation->simulation.get_agent_plan_max_length() + 1, wxDefaultPosition, wxDefaultSize, wxSL_HORIZONTAL | wxSL_LABELS); //+1 because empty plan could have 0 max and slider requires that min < max        
-        extended_controls_panel_sizer->Add(slider_current_time_of_simulation, 1, wxEXPAND | wxALL, 10);
+        extended_controls_panel_sizer->Add(slider_current_time_of_simulation, 0, wxEXPAND | wxALL, 10);
         
+        ////////////////////////////////////////
+        ////////////////////////////////////////
+        agents_plans_panel = new Agents_Plans_Panel(this, Frame_with_simulation);
+        extended_controls_panel_sizer->Add(agents_plans_panel, 1, wxEXPAND | wxALL, 10);
+        agents_plans_panel->SetBackgroundColour(wxColor(*wxRED));
+        ////////////////////////////////////////
+        ////////////////////////////////////////
+
         SetSizerAndFit(extended_controls_panel_sizer);
         slider_current_time_of_simulation->Bind(wxEVT_SLIDER, &Extended_controls_panel::On_slider_scroll, this);
     }
@@ -316,6 +324,8 @@
 
         slider_current_time_of_simulation->SetMax(Frame_with_simulation->simulation.get_agent_plan_max_length() + 1); //+1 because empty plan could have 0 max and slider requires that min < max
         slider_current_time_of_simulation->SetValue(Frame_with_simulation->current_time_of_simulation);
+
+        agents_plans_panel->update_data();
     }     
 
 
@@ -574,4 +584,84 @@
 
             }
         }
+    }
+
+
+
+
+
+/*
+*
+**** class Agents_Plans_Panel : public wxPanel
+*
+*/
+    Agents_Plans_Panel::Agents_Plans_Panel(wxWindow* parent, MyFrame* Frame_with_simulation) 
+        : wxScrolledWindow(parent, wxID_ANY),
+        Frame_with_simulation(Frame_with_simulation){
+
+        Agents_Plans_Panel_sizer = new wxBoxSizer(wxVERTICAL);
+
+        update_data();
+    }
+
+    wxGrid* Agents_Plans_Panel::create_grid_from_plan(const std::vector<plan_step>& plan, std::string label) {
+
+        wxGrid* ret = new wxGrid(this, wxID_ANY);
+        ret->CreateGrid(1, plan.size() + 1);
+        ret->DisableDragColSize();
+
+        ret->HideRowLabels();
+        ret->HideColLabels();
+
+
+        ret->SetCellValue(0, 0, label);
+        ret->SetColSize(0, 400 * scaler);
+
+        for (size_t i = 1; i < plan.size() + 1; i++) {
+            ret->SetCellValue(0, i, plan[i - 1].action);
+            ret->SetColSize(i, plan[i - 1].duration / 10);
+        }
+                
+        ret->ShowScrollbars(wxSHOW_SB_NEVER, wxSHOW_SB_NEVER);
+
+        return ret;
+    }
+
+    void Agents_Plans_Panel::add_plans_of_agents(const Agent& agent) {
+
+        
+        auto original_plan = agent.get_original_plan();
+        auto altered_plan = agent.get_altered_plan();
+
+        plans_of_agents.push_back(create_grid_from_plan(original_plan, agent.get_name() + " Original"));
+        plans_of_agents.push_back(create_grid_from_plan(altered_plan , agent.get_name() + " Altered" ));
+
+    }
+
+    void Agents_Plans_Panel::update_data() {
+
+        //Clear all of the old data
+            //This handles destruction of wxGrids
+        Agents_Plans_Panel_sizer->Clear(true);
+            //This resets the array
+        plans_of_agents.clear();
+
+        //Build new data
+        auto const_agents = Frame_with_simulation->simulation.show_agents();
+
+        for (const Agent& agent : const_agents)
+            add_plans_of_agents(agent);
+
+        //Add them to sizer
+        for (size_t i = 0; i < plans_of_agents.size(); i++) {
+            Agents_Plans_Panel_sizer->Add(plans_of_agents[i], wxEXPAND);
+
+            if(i % 2)
+                Agents_Plans_Panel_sizer->AddSpacer(20);
+        }
+            
+
+        this->SetSizer(Agents_Plans_Panel_sizer);        
+        this->FitInside(); // ask the sizer about the needed size
+        this->SetScrollRate(5, 5);
     }

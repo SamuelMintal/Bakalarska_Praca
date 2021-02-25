@@ -9,6 +9,7 @@
 
 #include "MyApp_MyFrame.h"
 #include "Enums.h"
+#include "simulation.h"
 
 class MyFrame;
 
@@ -88,10 +89,41 @@ public:
 };
 
 
+class Agents_Plans_Panel : public wxScrolledWindow
+{
+    //Sizer
+    wxSizer* Agents_Plans_Panel_sizer = nullptr;
+
+    //Grid of Plans of Agents
+    //Vector's destructor also destroys wxGrids
+    //Thus is important that those wxGrids have NULL as theyr parent. Else both vector and wxWidgets would try to destroy it and that would be bad...
+    std::vector<wxGrid*> plans_of_agents;
+
+    //Frame with simulation...
+    MyFrame* Frame_with_simulation = nullptr;
+
+    //Collumn width sizer
+    float scaler = 0.5;
+
+    //Adds plans of agent into the plans_of_agents
+    void add_plans_of_agents(const Agent& agent);
+
+    wxGrid* create_grid_from_plan(const std::vector<plan_step>& plan, std::string label);
+
+public:
+
+    Agents_Plans_Panel(wxWindow* parent, MyFrame* Frame_with_simulation);
+
+    void update_data();
+
+};
+
+
 class Extended_controls_panel : public wxPanel {
     MyFrame* Frame_with_simulation = nullptr;
     wxBoxSizer* extended_controls_panel_sizer = nullptr;
     wxSlider* slider_current_time_of_simulation = nullptr;
+    Agents_Plans_Panel* agents_plans_panel = nullptr;
 
     /*
     * Sets the Frame_with_simulation->current_time_of_simulation to the current slider value and refreshes the simulation panel so it shows
@@ -203,3 +235,6 @@ public:
     void paintNow();
     void render(wxDC& dc);    
 };
+
+
+
