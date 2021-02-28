@@ -104,7 +104,7 @@ class Agents_Plans_Panel : public wxScrolled<wxPanel>
     MyFrame* Frame_with_simulation = nullptr;
 
     //Collumn width sizer
-    float scaler = 0.1;
+    float scaler = static_cast<float>(0.1);
 
     const int Agent_name_coulmn_width = 2000;
 
@@ -268,6 +268,10 @@ class Draw_Panel : public wxPanel
 
 public:
     Draw_Panel(MyFrame* parent_simulation, wxFrame* parent, wxWindowID id, wxSize min_size);
+
+    /* Does nothing, is used to intercept ignore_EVT_ERASE_BACKGROUND in order to reduce flickering
+    */
+    void ignore_EVT_ERASE_BACKGROUND(wxEraseEvent& evt);
 
     static int hexChar_to_num(char c);
     static wxColor hex_to_wxColor(std::string hex);

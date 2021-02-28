@@ -473,7 +473,12 @@
         MyFrame_with_simulation = parent_simulation;
         SetBackgroundColour(wxColor(*wxWHITE));
         Bind(wxEVT_PAINT, &Draw_Panel::paintEvent, this);
+        Bind(wxEVT_ERASE_BACKGROUND, &Draw_Panel::ignore_EVT_ERASE_BACKGROUND, this);
     }
+
+    /* Does nothing, is used to intercept ignore_EVT_ERASE_BACKGROUND in order to reduce flickering   
+    */
+    void Draw_Panel::ignore_EVT_ERASE_BACKGROUND(wxEraseEvent& evt) {}
 
     /*
     * Called by the system of by wxWidgets when the panel needs
@@ -668,7 +673,7 @@
             // +1 because the colors[0] is the agents color and colors[1] is the color of steps with id == 0;
             ret->SetCellBackgroundColour(0, i, colors[current_step.id + 1]);                        
         }                       
-        
+       
 
         return ret;
     }

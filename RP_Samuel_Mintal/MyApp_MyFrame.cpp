@@ -72,16 +72,16 @@ void MyFrame::thread_simulation_step(wxTimerEvent& event) {
 
 void MyFrame::thread_simulation_step() {
 
+    //every step move by 70 miliseconds
+    current_time_of_simulation += 70; 
+
     //moved == true if at least one agent moved
     bool moved = simulation.move_to_time(current_time_of_simulation);
     update_panels_data();
 
-    if (moved) {
-        panel_simulation->paintNow();
-        current_time_of_simulation += 70; //every step move by 70 miliseconds
-    }
-    else {
-        panel_simulation->paintNow();
+    panel_simulation->paintNow();
+
+    if(!moved) {        
         current_time_of_simulation = 0;
         simulaton_timer.Stop();
         panel_buttons->set_GoPause_label_to("Go");
