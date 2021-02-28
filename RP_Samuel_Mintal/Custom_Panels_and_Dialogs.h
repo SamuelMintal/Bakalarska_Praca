@@ -89,32 +89,64 @@ public:
 };
 
 
-class Agents_Plans_Panel : public wxScrolledWindow
+class Agents_Plans_Panel : public wxScrolled<wxPanel>
 {
     //Sizer
     wxSizer* Agents_Plans_Panel_sizer = nullptr;
 
-    //Grid of Plans of Agents
-    //Vector's destructor also destroys wxGrids
-    //Thus is important that those wxGrids have NULL as theyr parent. Else both vector and wxWidgets would try to destroy it and that would be bad...
+    //Grids of Plans of Agents
+    //Vector's destructor DOESN'T destroy wxGrids
+    //wxGrids are destroyed by the Agents_Plans_Panel_sizer->Clear(true); in update data
+    //And when the panel alone is being destroyed, the wxGrids has this panel as parent, so in that case the panel deals with destruction of grids
     std::vector<wxGrid*> plans_of_agents;
 
     //Frame with simulation...
     MyFrame* Frame_with_simulation = nullptr;
 
     //Collumn width sizer
-    float scaler = 0.5;
+    float scaler = 0.1;
 
-    //Adds plans of agent into the plans_of_agents
+    const int Agent_name_coulmn_width = 2000;
+
+    /* Makes and adds wxGrids from plans of agent
+    */
     void add_plans_of_agents(const Agent& agent);
 
-    wxGrid* create_grid_from_plan(const std::vector<plan_step>& plan, std::string label);
+    /* Creates grid which is shown to user from the plan
+    */
+    wxGrid* create_grid_from_plan(const std::vector<plan_step>& plan, std::string label, const std::vector<wxColor>& colors);
+
+    /* Internally binds all possible scrolling events in order to adequatly show the simulation current time line
+    */
+    void Bind_all_scroll_events();
 
 public:
 
+    /* Only constructor
+    */
     Agents_Plans_Panel(wxWindow* parent, MyFrame* Frame_with_simulation);
 
+    /* if simulation is empty, it doesn't show anything
+    * It loads all the data from scratch
+    */
     void update_data();
+
+    /* May be called by the system due to scrolling
+    */
+    void scrollPaintEvent(wxScrollWinEvent& event);
+
+    /* May be called by the system
+    */
+    void paintEvent(wxPaintEvent& evt);
+
+    /* May be called manually to update the simulation current time line.
+    */
+    void update_simulation_current_time_line();
+
+    /* Draws the simulation current time line
+    * Cannot be drawn on the wxGrids due to the wxWidgets limitations
+    */
+    void render(wxDC& dc);
 
 };
 
@@ -134,10 +166,18 @@ public:
 
     Extended_controls_panel(wxWindow* parent, MyFrame* Frame_with_simulation, int id, const wxPoint& position, const wxSize& size);
 
-    /*
-    *  Sets slider to current_time_of_simulation and updates it's maximum value.
+    
+    /* Sets slider to current_time_of_simulation.
+    *  Also forces Agents_Plans_Panel to reload it's grids.
+    * Call when you reload the simulation
     */
     void update_data();
+
+    /* Sets slider to current_time_of_simulation and updates it's maximum value.
+    * Moves simulation acutal time line of Agents_Plans_Panel
+    * Call when simulation moves, but doesnt reload.
+    */
+    void reload_data();
 };
 
 
@@ -223,13 +263,14 @@ class Draw_Panel : public wxPanel
     wxPen pen_error_ring_5 = wxPen(wxColour(0, 0, 0), 5);
     wxPen pen_rotation = wxPen(wxColour(220, 220, 220), 7);
 
-    int hexChar_to_num(char c);
+    
     wxPoint angle_to_point(int length, int angle, wxPoint base);
 
 public:
     Draw_Panel(MyFrame* parent_simulation, wxFrame* parent, wxWindowID id, wxSize min_size);
 
-    wxColor hex_to_wxColor(std::string hex);
+    static int hexChar_to_num(char c);
+    static wxColor hex_to_wxColor(std::string hex);
 
     void paintEvent(wxPaintEvent& evt);
     void paintNow();

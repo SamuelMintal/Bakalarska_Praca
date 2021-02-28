@@ -90,7 +90,7 @@ bool Agent::move_to_time(int time) {
     return true;
 }
 
-std::string Agent::get_color() {
+std::string Agent::get_color() const {
     return color;
 }
 

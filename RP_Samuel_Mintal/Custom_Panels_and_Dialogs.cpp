@@ -252,7 +252,7 @@
         for (size_t i = 0; i < const_agents.size(); i++) {
 
             agent_grid->SetCellValue(i, 0, const_agents[i].get_name());
-            agent_grid->SetCellBackgroundColour(i, 0, Frame_with_simulation->panel_simulation->hex_to_wxColor(const_agents[i].get_color()));
+            agent_grid->SetCellBackgroundColour(i, 0, Draw_Panel::hex_to_wxColor(const_agents[i].get_color()));
 
             if (const_agents[i].get_error_state() == 1) {
                 agent_grid->SetCellValue(i, 1, "Error");
@@ -302,13 +302,13 @@
         extended_controls_panel_sizer = new wxBoxSizer(wxVERTICAL);
                
         slider_current_time_of_simulation = new wxSlider(this, wxID_ANY, 0, 0, Frame_with_simulation->simulation.get_agent_plan_max_length() + 1, wxDefaultPosition, wxDefaultSize, wxSL_HORIZONTAL | wxSL_LABELS); //+1 because empty plan could have 0 max and slider requires that min < max        
-        extended_controls_panel_sizer->Add(slider_current_time_of_simulation, 0, wxEXPAND | wxALL, 10);
+        extended_controls_panel_sizer->Add(slider_current_time_of_simulation, 0, wxEXPAND | wxUP | wxLEFT | wxRIGHT | wxDOWN, 10);
         
         ////////////////////////////////////////
         ////////////////////////////////////////
         agents_plans_panel = new Agents_Plans_Panel(this, Frame_with_simulation);
-        extended_controls_panel_sizer->Add(agents_plans_panel, 1, wxEXPAND | wxALL, 10);
-        agents_plans_panel->SetBackgroundColour(wxColor(*wxRED));
+        extended_controls_panel_sizer->Add(agents_plans_panel, 1, wxEXPAND);
+        //agents_plans_panel->SetBackgroundColour(wxColor(171, 171, 171));
         ////////////////////////////////////////
         ////////////////////////////////////////
 
@@ -317,16 +317,29 @@
     }
 
 
-    /*
-    Sets slider to current_time_of_simulation and updates it's maximum value.
+    /* Sets slider to current_time_of_simulation.
+    *  Also forces Agents_Plans_Panel to reload it's grids.
+    * Call when you reload the simulation
     */
     void Extended_controls_panel::update_data() {
 
-        slider_current_time_of_simulation->SetMax(Frame_with_simulation->simulation.get_agent_plan_max_length() + 1); //+1 because empty plan could have 0 max and slider requires that min < max
+        slider_current_time_of_simulation->SetValue(Frame_with_simulation->current_time_of_simulation);
+        agents_plans_panel->update_simulation_current_time_line();
+
+    }
+
+    /* Sets slider to current_time_of_simulation and updates it's maximum value.
+    * Moves simulation acutal time line of Agents_Plans_Panel
+    * Call when simulation moves, but doesnt reload.
+    */
+    void Extended_controls_panel::reload_data() {
+
+        //+1 because empty plan could have 0 max and slider requires that min < max
+        slider_current_time_of_simulation->SetMax(Frame_with_simulation->simulation.get_agent_plan_max_length() + 1); 
         slider_current_time_of_simulation->SetValue(Frame_with_simulation->current_time_of_simulation);
 
         agents_plans_panel->update_data();
-    }     
+    }
 
 
 
@@ -595,16 +608,40 @@
 **** class Agents_Plans_Panel : public wxPanel
 *
 */
+
+
+    /* Only constructor
+    */
     Agents_Plans_Panel::Agents_Plans_Panel(wxWindow* parent, MyFrame* Frame_with_simulation) 
-        : wxScrolledWindow(parent, wxID_ANY),
-        Frame_with_simulation(Frame_with_simulation){
+    : wxScrolled<wxPanel>(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxFULL_REPAINT_ON_RESIZE),
+        Frame_with_simulation(Frame_with_simulation) {
 
         Agents_Plans_Panel_sizer = new wxBoxSizer(wxVERTICAL);
 
+        Bind_all_scroll_events();
         update_data();
+      }
+                         
+    /* Internally binds all possible scrolling events in order to adequatly show the simulation current time line
+    */
+    void Agents_Plans_Panel::Bind_all_scroll_events() {
+
+        //It is ugly but as far as I know and forums say, it is the only way
+
+        //Those are all the events that  wxScrolled<wxPanel> is able to emit
+        Bind(wxEVT_SCROLLWIN_THUMBTRACK, &Agents_Plans_Panel::scrollPaintEvent, this);
+        Bind(wxEVT_SCROLLWIN_THUMBRELEASE, &Agents_Plans_Panel::scrollPaintEvent, this);
+        Bind(wxEVT_SCROLLWIN_TOP, &Agents_Plans_Panel::scrollPaintEvent, this);
+        Bind(wxEVT_SCROLLWIN_BOTTOM, &Agents_Plans_Panel::scrollPaintEvent, this);
+        Bind(wxEVT_SCROLLWIN_LINEDOWN, &Agents_Plans_Panel::scrollPaintEvent, this);
+        Bind(wxEVT_SCROLLWIN_LINEUP, &Agents_Plans_Panel::scrollPaintEvent, this);
+        Bind(wxEVT_SCROLLWIN_PAGEDOWN, &Agents_Plans_Panel::scrollPaintEvent, this);
+        Bind(wxEVT_SCROLLWIN_PAGEUP, &Agents_Plans_Panel::scrollPaintEvent, this);       
     }
 
-    wxGrid* Agents_Plans_Panel::create_grid_from_plan(const std::vector<plan_step>& plan, std::string label) {
+    /* Creates grid which is shown to user from the plan
+    */
+    wxGrid* Agents_Plans_Panel::create_grid_from_plan(const std::vector<plan_step>& plan, std::string label, const std::vector<wxColor>& colors) {
 
         wxGrid* ret = new wxGrid(this, wxID_ANY);
         ret->CreateGrid(1, plan.size() + 1);
@@ -612,32 +649,60 @@
 
         ret->HideRowLabels();
         ret->HideColLabels();
-
+        
+        
+        ret->ShowScrollbars(wxSHOW_SB_NEVER, wxSHOW_SB_NEVER);
+        ret->SetDefaultCellAlignment(wxALIGN_CENTRE, wxALIGN_CENTRE);
+        ret->SetDefaultCellFitMode(wxGridFitMode::Overflow()); //Cells Doesn't overflow anyway... strange
 
         ret->SetCellValue(0, 0, label);
-        ret->SetColSize(0, 400 * scaler);
+        ret->SetColSize(0, Agent_name_coulmn_width * scaler);
+        ret->SetCellBackgroundColour(0, 0, colors[0]);
+
 
         for (size_t i = 1; i < plan.size() + 1; i++) {
-            ret->SetCellValue(0, i, plan[i - 1].action);
-            ret->SetColSize(i, plan[i - 1].duration / 10);
-        }
-                
-        ret->ShowScrollbars(wxSHOW_SB_NEVER, wxSHOW_SB_NEVER);
+            auto current_step = plan[i - 1];
+
+            ret->SetCellValue(0, i, current_step.action);
+            ret->SetColSize(i, current_step.duration * scaler);
+            // +1 because the colors[0] is the agents color and colors[1] is the color of steps with id == 0;
+            ret->SetCellBackgroundColour(0, i, colors[current_step.id + 1]);                        
+        }                       
+        
 
         return ret;
     }
 
+    /* Makes and adds wxGrids from plans of agent
+    */
     void Agents_Plans_Panel::add_plans_of_agents(const Agent& agent) {
 
         
         auto original_plan = agent.get_original_plan();
         auto altered_plan = agent.get_altered_plan();
 
-        plans_of_agents.push_back(create_grid_from_plan(original_plan, agent.get_name() + " Original"));
-        plans_of_agents.push_back(create_grid_from_plan(altered_plan , agent.get_name() + " Altered" ));
+        // index 0 == Agent's color, the rest are colours for plan steps groupped by theyr's id
+        std::vector<wxColor> Colours_of_plan_steps;
+        srand(time(NULL));
+
+        Colours_of_plan_steps.push_back(Draw_Panel::hex_to_wxColor(agent.get_color()));
+
+        //I can do this because: max id of original == original_plan[original_plan.size() - 1].id == max id of altered AND they start from 0
+        for (int i = 0; i <= original_plan[original_plan.size() - 1].id; i++)
+            // +156 so the colors dont get too dark
+            Colours_of_plan_steps.push_back(wxColor(((rand() % 256) + 156) % 256, ((rand() % 256) + 156) % 256, ((rand() % 256) + 156) % 256));
+
+        
+
+
+        plans_of_agents.push_back(create_grid_from_plan(original_plan, agent.get_name() + " Original", Colours_of_plan_steps));
+        plans_of_agents.push_back(create_grid_from_plan(altered_plan , agent.get_name() + " Altered" , Colours_of_plan_steps));
 
     }
 
+    /* if simulation is empty, it doesn't show anything
+    * It loads all the data from scratch
+    */
     void Agents_Plans_Panel::update_data() {
 
         //Clear all of the old data
@@ -664,4 +729,49 @@
         this->SetSizer(Agents_Plans_Panel_sizer);        
         this->FitInside(); // ask the sizer about the needed size
         this->SetScrollRate(5, 5);
+
+        update_simulation_current_time_line();
+    }
+
+    /* May be called by system
+    */
+    void Agents_Plans_Panel::paintEvent(wxPaintEvent& evt) {
+
+        wxPaintDC dc(this);
+        render(dc);    
+    }
+
+
+    /* May be called by the system due to scrolling
+    */
+    void Agents_Plans_Panel::scrollPaintEvent(wxScrollWinEvent& event) {
+
+        update_simulation_current_time_line();
+        event.Skip(true);
+    }
+
+    /* May be called manually to update the simulation current time line.
+    */
+    void Agents_Plans_Panel::update_simulation_current_time_line() {
+
+        wxClientDC dc(this);
+        render(dc);
+    }
+
+    /* Draws the simulation current time line
+    * Cannot be drawn on the wxGrids due to the wxWidgets limitations
+    */
+    void Agents_Plans_Panel::render(wxDC& dc) {
+
+        DoPrepareDC(dc);
+        dc.Clear();
+        
+        dc.SetPen(wxPen(wxColor(0, 0, 0), 10)); // 5-pixels-thick red outline
+
+        int x_offset = Agent_name_coulmn_width * scaler;
+        int x_for_line = x_offset + Frame_with_simulation->current_time_of_simulation * scaler;
+
+        int y_height = dc.GetSize().y;
+
+        dc.DrawLine(x_for_line, 0, x_for_line, y_height);
     }

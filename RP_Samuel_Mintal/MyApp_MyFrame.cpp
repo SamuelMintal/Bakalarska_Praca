@@ -59,6 +59,11 @@ void MyFrame::update_panels_data() {
     panel_extended_controls->update_data();
 }
 
+void MyFrame::reload_panels_data() {
+    panel_agents->update_data();
+    panel_extended_controls->reload_data();
+}
+
 void MyFrame::thread_simulation_step(wxTimerEvent& event) {
 
     //I dont care about the event's data
@@ -129,7 +134,7 @@ void  MyFrame::On_button_load_plan(wxCommandEvent& event) {
             panel_buttons->set_GoPause_label_to("Go");
         }
         current_time_of_simulation = 0;
-        update_panels_data();
+        reload_panels_data();
     }
     panel_simulation->Refresh();
 }
@@ -138,7 +143,7 @@ void MyFrame::On_button_set_agents_errors(wxCommandEvent& event) {
 
     dialog_robot_errors = new Error_Dialog(this, this);
     dialog_robot_errors->ShowModal();
-    update_panels_data();
+    reload_panels_data();
 }
 
 void MyFrame::On_button_about(wxCommandEvent& event) {

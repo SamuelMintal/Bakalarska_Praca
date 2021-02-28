@@ -50,6 +50,7 @@ private:
     void thread_simulation_step(wxTimerEvent& event); //Being called by wxTimer
     void thread_simulation_step(); //For calling it manualy
     void update_panels_data();
+    void reload_panels_data();
 
     
     // Dialogs and Panels

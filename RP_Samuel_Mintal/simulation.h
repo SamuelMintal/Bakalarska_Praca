@@ -90,7 +90,7 @@ public:
     */
     bool move_to_time(int time);
 
-    std::string get_color();
+    std::string get_color() const;
     std::string get_name() const;
     pos get_current_position();
     int get_rotation();
