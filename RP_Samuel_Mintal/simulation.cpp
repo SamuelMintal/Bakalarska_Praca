@@ -90,6 +90,38 @@ bool Agent::move_to_time(int time) {
     return true;
 }
 
+/* Returns plan, which agent is expected to perform
+*  - altered plan until now, then original plan
+* Used to calculate potential collisions
+*/
+std::vector<plan_step> Agent::get_expected_plan_from_time(int time) const {
+
+    std::vector<plan_step> expected_plan;
+    return expected_plan;
+
+
+
+
+
+    ////collect the altered plan until time time to the expected_plan
+    //for (int curr_step_idx = 0, curr_build_time = 0; curr_step_idx < altered_plan.size(); curr_step_idx++) {
+
+    //    curr_build_time += altered_plan[curr_step_idx].duration;
+
+
+    //    
+    //    if (curr_build_time > time)
+    //        break;
+
+
+    //}
+
+    //Add the rest from the original
+   
+
+
+}
+
 std::string Agent::get_color() const {
     return color;
 }

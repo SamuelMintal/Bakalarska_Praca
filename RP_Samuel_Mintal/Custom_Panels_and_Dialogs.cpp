@@ -771,7 +771,7 @@
         DoPrepareDC(dc);
         dc.Clear();
         
-        dc.SetPen(wxPen(wxColor(0, 0, 0), 10)); // 5-pixels-thick red outline
+        dc.SetPen(wxPen(wxColor(0, 0, 0), 10));
 
         int x_offset = Agent_name_coulmn_width * scaler;
         int x_for_line = x_offset + Frame_with_simulation->current_time_of_simulation * scaler;
