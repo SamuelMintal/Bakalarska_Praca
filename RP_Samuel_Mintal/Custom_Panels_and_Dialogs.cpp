@@ -698,7 +698,11 @@
             auto current_step = plan[i - 1];
             
             //WxWidgets DOES NOT allow columns narrower than 15 if they are not zero ! If you pass number smaller than 15 you get weirdness -> Therefore there can be some inaccuracy ! Even though it's very small one
-            ret->SetColSize(i,std::max(15, static_cast<int>(static_cast<float>(current_step.duration) * scaler))); 
+            if(static_cast<int>(static_cast<float>(current_step.duration) * scaler) == 0)
+                ret->SetColSize(i, 0);
+            else
+                ret->SetColSize(i,std::max(15, static_cast<int>(static_cast<float>(current_step.duration) * scaler))); 
+
             ret->SetCellValue(0, i, current_step.action);
             // +1 because the colors[0] is the agents color and colors[1] is the color of steps with id == 0;
             ret->SetCellBackgroundColour(0, i, colors[current_step.id + 1]);                        
