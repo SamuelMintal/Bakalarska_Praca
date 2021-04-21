@@ -25,7 +25,9 @@ MyFrame::MyFrame()
 
     //setting up panels in notebook and adding them there
     panel_agents = new Agent_Info_Panel(notebook, this, ID_panel_agents, wxDefaultPosition, wxSize(100, 100));
+    agents_checkboxes_panel = new Agents_CheckBoxes_Panel(notebook, this);
     notebook->AddPage(panel_agents, "Agents Info", true);
+    notebook->AddPage(agents_checkboxes_panel, "CheckBoxes");
     //notebook->AddPage(new Agent_Info_Panel(notebook, this, ID_panel_agents, wxDefaultPosition, wxSize(100, 100)), "kokotko");
 
     //Setting up panels in frame    
@@ -70,6 +72,7 @@ void MyFrame::update_panels_data() {
 void MyFrame::reload_panels_data() {
     panel_agents->update_data();
     panel_extended_controls->reload_data();
+    agents_checkboxes_panel->reload_data();
 }
 
 void MyFrame::thread_simulation_step(wxTimerEvent& event) {

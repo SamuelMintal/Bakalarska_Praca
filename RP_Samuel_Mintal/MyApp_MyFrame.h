@@ -39,6 +39,7 @@ private:
     friend class Extended_controls_panel;
     friend class Buttons_Panel;
     friend class Agents_Plans_Panel;
+    friend class Agents_CheckBoxes_Panel;
 
     void OnStop(wxCommandEvent& event);
     void On_button_load_plan(wxCommandEvent& event);    
@@ -60,6 +61,7 @@ private:
     Draw_Panel* panel_simulation = nullptr;
     Extended_controls_panel* panel_extended_controls = nullptr;
     Error_Dialog* dialog_robot_errors = nullptr;
+    Agents_CheckBoxes_Panel* agents_checkboxes_panel = nullptr;
     wxNotebook* notebook = nullptr;
 
     // Sizers

@@ -780,3 +780,57 @@
 
         dc.DrawLine(x_for_line, 0, x_for_line, y_height);
     }
+
+
+
+
+/*
+*
+**** class Agents_CheckBoxes_Panel : public wxPanel
+*
+*/
+
+    Agents_CheckBoxes_Panel::Agents_CheckBoxes_Panel(wxWindow* parent, MyFrame* Frame_with_simulation, wxWindowID id, wxSize size) :
+        wxPanel(parent, id, wxDefaultPosition, size),
+        Frame_with_simulation(Frame_with_simulation) {
+        
+        Agents_CheckBoxes_sizer = new wxBoxSizer(wxVERTICAL);
+        reload_data();
+    }
+
+    void Agents_CheckBoxes_Panel::reload_data() {
+
+        if (!Frame_with_simulation)
+            return;
+
+        //Clear all of the old data
+            //This handles destruction of CheckBoxes and texts
+        Agents_CheckBoxes_sizer->Clear(true);
+
+        //This resets the vectors
+        checkboxes.clear();
+
+        //Build new data
+        auto agents = Frame_with_simulation->simulation.show_agents();
+        for (size_t i = 0; i < agents.size(); i++) {
+
+            //Create Agents checkBoxes with text as theyr names having theyr color
+            checkboxes.push_back(new wxCheckBox(this, wxID_ANY, agents[i].get_name()));
+            checkboxes[i]->SetForegroundColour(Draw_Panel::hex_to_wxColor(agents[i].get_color()));            
+
+            Agents_CheckBoxes_sizer->AddSpacer(10);
+            Agents_CheckBoxes_sizer->Add(checkboxes[i]);
+        }
+
+        SetSizerAndFit(Agents_CheckBoxes_sizer);
+    }
+
+    std::vector<std::string> Agents_CheckBoxes_Panel::get_names_of_checked_agents() {
+        std::vector<std::string> ret;
+
+        for(auto checkbox : checkboxes)
+            if (checkbox->IsChecked())
+                ret.push_back(checkbox->GetLabelText().ToStdString());
+        
+        return ret;
+    }

@@ -283,3 +283,22 @@ public:
 
 
 
+
+
+class Agents_CheckBoxes_Panel : public wxPanel {
+
+    MyFrame* Frame_with_simulation;
+    wxSizer* Agents_CheckBoxes_sizer = nullptr;
+
+    std::vector<wxCheckBox*> checkboxes;
+
+public:
+    Agents_CheckBoxes_Panel(wxWindow* parent, MyFrame* Frame_with_simulation, wxWindowID id = wxID_ANY, wxSize size = wxDefaultSize);
+
+    void reload_data();
+
+    std::vector<std::string> get_names_of_checked_agents();
+};
+
+
+
