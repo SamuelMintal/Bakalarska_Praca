@@ -304,13 +304,10 @@
         slider_current_time_of_simulation = new wxSlider(this, wxID_ANY, 0, 0, Frame_with_simulation->simulation.get_agent_plan_max_length() + 1, wxDefaultPosition, wxDefaultSize, wxSL_HORIZONTAL | wxSL_LABELS); //+1 because empty plan could have 0 max and slider requires that min < max        
         extended_controls_panel_sizer->Add(slider_current_time_of_simulation, 0, wxEXPAND | wxUP | wxLEFT | wxRIGHT | wxDOWN, 10);
         
-        ////////////////////////////////////////
-        ////////////////////////////////////////
+
         agents_plans_panel = new Agents_Plans_Panel(this, Frame_with_simulation);
         extended_controls_panel_sizer->Add(agents_plans_panel, 1, wxEXPAND);
-        //agents_plans_panel->SetBackgroundColour(wxColor(171, 171, 171));
-        ////////////////////////////////////////
-        ////////////////////////////////////////
+
 
         SetSizerAndFit(extended_controls_panel_sizer);
         slider_current_time_of_simulation->Bind(wxEVT_SLIDER, &Extended_controls_panel::On_slider_scroll, this);
@@ -336,7 +333,7 @@
 
         //+1 because empty plan could have 0 max and slider requires that min < max
         slider_current_time_of_simulation->SetMax(Frame_with_simulation->simulation.get_agent_plan_max_length() + 1); 
-        slider_current_time_of_simulation->SetValue(Frame_with_simulation->current_time_of_simulation);
+        //slider_current_time_of_simulation->SetValue(Frame_with_simulation->current_time_of_simulation);
 
         agents_plans_panel->update_data();
     }
@@ -700,7 +697,8 @@
         for (size_t i = 1; i < plan.size() + 1; i++) {
             auto current_step = plan[i - 1];
             
-            ret->SetColSize(i, static_cast<int>(static_cast<float>(current_step.duration) * scaler));
+            //WxWidgets DOES NOT allow columns narrower than 15 if they are not zero ! If you pass number smaller than 15 you get weirdness -> Therefore there can be some inaccuracy ! Even though it's very small one
+            ret->SetColSize(i,std::max(15, static_cast<int>(static_cast<float>(current_step.duration) * scaler))); 
             ret->SetCellValue(0, i, current_step.action);
             // +1 because the colors[0] is the agents color and colors[1] is the color of steps with id == 0;
             ret->SetCellBackgroundColour(0, i, colors[current_step.id + 1]);                        
