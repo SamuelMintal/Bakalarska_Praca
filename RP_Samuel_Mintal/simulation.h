@@ -8,8 +8,23 @@
 #include <stdlib.h> 
 
 struct pos {
-    float x;
-    float y;
+    float x = 0.0;
+    float y = 0.0;
+};
+
+/* Stuff that agent changes on istelf when it moves
+*/
+struct Agent_move_state {
+    pos current;
+    int rotation;
+    bool succesfully_moved;
+
+    Agent_move_state() {
+        pos curr;
+        current = curr;
+        rotation = 0;
+        succesfully_moved = true;
+    }
 };
 
 class plan_step {
@@ -59,8 +74,9 @@ class Agent {
     pos current;
     int rotation = 0;
 
-    //time span of the altered plan
+    //time span of both plans
     int altered_max_time = 0;
+    int original_max_time = 0;
 
     int agent_error_speed_max = 0;
     int agent_error_speed_sigma = 0;
@@ -72,8 +88,8 @@ class Agent {
     std::vector<plan_step> original_plan;
     std::vector<plan_step> altered_plan;
 
-    //If the agent is late/soon or lost
-    // 0 == no error, 1 == error, 5 == lost
+    //If the agent is late/soon or succesfully_moved
+    // 0 == no error, 1 == error, 5 == succesfully_moved
     int errorness = 0;
 
 public:
@@ -83,12 +99,20 @@ public:
     */
     Agent(std::string name, std::string color, pos start, pos finish, const std::vector<int>& errors);
 
+    /* Returns move_state that agent would be at time 'time' if he was following plan 'plan' with it's time span being 'plan_max_time'
+    */
+    Agent_move_state get_agents_move_state_in(const std::vector<plan_step>& plan, int plan_max_time, int time) const;
+
     /* moves agent to absolute time
     * parameter time is in miliseconds
-    * returns true if agent successfully perfomed his action, false if not (got lost)
+    * returns true if agent successfully perfomed his action, false if not (got succesfully_moved)
     * This function changes agent's current and rotation variables.
     */
     bool move_to_time(int time);
+
+    /* Returns move_state that represents where agent should be if he was following his plan perfectly (his original plann)
+    */
+    Agent_move_state where_should_I_be(int time) const;
 
     /* Returns plan, which agent is expected to perform
     *  - altered plan until now, then original plan
@@ -170,7 +194,7 @@ class Simulation {
     int set_time_diffs_of_agent_accordingly_to(int agent_index, const std::vector<plan_step>& altered, const std::vector<plan_step>& original);
 
     /*
-    * returns -1 when lost, or one of 0,90,180,270 if not
+    * returns -1 when succesfully_moved, or one of 0,90,180,270 if not
     */
     int get_closest_90angle_or_lost(int angle, int fatal_angle);
 

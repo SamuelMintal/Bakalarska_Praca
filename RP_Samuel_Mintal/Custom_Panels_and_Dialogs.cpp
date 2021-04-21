@@ -563,7 +563,7 @@
                     
                 
             
-
+            //Draw agents on theyrs current location (altered_plan)
             pos curr_pos;
             wxPoint curr_center;
             auto agents = MyFrame_with_simulation->simulation.show_agents();
@@ -590,7 +590,7 @@
                     //It has small time error                    
                     dc.SetPen(pen_error_ring_1);
                 else if (agents[i].get_error_state() == 5)
-                    //It is lost
+                    //It is succesfully_moved
                     dc.SetPen(pen_error_ring_5);
 
                 //Circle Around the agent displaying its errorness status
@@ -601,6 +601,38 @@
                 dc.DrawLine(curr_center, angle_to_point( static_cast<int>(agent_radius * 1.5), agents[i].get_rotation(), curr_center));
 
             }
+
+            //Draw where agents should be (theyrs original plan)
+            if (MyFrame_with_simulation->agents_checkboxes_panel) {                
+                std::vector<std::string> agent_names_to_draw = MyFrame_with_simulation->agents_checkboxes_panel->get_names_of_checked_agents();
+
+                for (auto& agent : agents) 
+                    for (auto& name : agent_names_to_draw)
+                        //If I found agent that should be drawn according to where he should be
+                        if (name == agent.get_name()) {
+
+                            Agent_move_state mv_state = agent.where_should_I_be(MyFrame_with_simulation->current_time_of_simulation);
+
+                            
+                            curr_center = wxPoint(mv_state.current.x * scale + offset, mv_state.current.y * scale + offset);
+
+                            //set brush and pen to the color of agent
+                            dc.SetPen(small_pen_agents);
+                            dc.SetBrush(hex_to_wxColor(agent.get_color()));
+
+                            //Draw SMALLER agent
+                            dc.DrawCircle(curr_center, agent_radius / 2);
+
+                            //Draw SMALLER rotation line
+                            dc.SetPen(small_pen_rotation);
+                            dc.DrawLine(curr_center, angle_to_point(static_cast<int>(agent_radius * 1.5 / 2), mv_state.rotation, curr_center));
+
+                            //we can go onto next one
+                            break;
+                        }                                       
+
+            }
+
         }
     }
 
@@ -796,6 +828,12 @@
         
         Agents_CheckBoxes_sizer = new wxBoxSizer(wxVERTICAL);
         reload_data();
+        Bind(wxEVT_CHECKBOX, &Agents_CheckBoxes_Panel::on_checkbox_click, this);        
+    }
+
+    void  Agents_CheckBoxes_Panel::on_checkbox_click(wxCommandEvent& event) {
+        //Just redraw the simulation so the user can see the results of his actions
+        Frame_with_simulation->panel_simulation->paintNow();
     }
 
     void Agents_CheckBoxes_Panel::reload_data() {
@@ -806,6 +844,7 @@
         //Clear all of the old data
             //This handles destruction of CheckBoxes and texts
         Agents_CheckBoxes_sizer->Clear(true);
+
 
         //This resets the vectors
         checkboxes.clear();
@@ -823,6 +862,8 @@
         }
 
         SetSizerAndFit(Agents_CheckBoxes_sizer);
+
+        Layout();       
     }
 
     std::vector<std::string> Agents_CheckBoxes_Panel::get_names_of_checked_agents() {

@@ -258,10 +258,12 @@ class Draw_Panel : public wxPanel
     wxPen pen_map_lines = wxPen(wxColor(0, 0, 0), 5);
     wxPen pen_map_obstacles = wxPen(wxColour(255, 255, 255), 5);
     wxPen pen_agents = wxPen(wxColour(255, 255, 255), 5);
+    wxPen small_pen_agents = wxPen(wxColour(255, 255, 255), 0);
     wxPen pen_error_ring_0 = wxPen(wxColour(0, 255, 0), 5);
     wxPen pen_error_ring_1 = wxPen(wxColour(255, 0, 0), 5);    
     wxPen pen_error_ring_5 = wxPen(wxColour(0, 0, 0), 5);
     wxPen pen_rotation = wxPen(wxColour(220, 220, 220), 7);
+    wxPen small_pen_rotation = wxPen(wxColour(220, 220, 220), 3);
 
     
     wxPoint angle_to_point(int length, int angle, wxPoint base);
@@ -291,6 +293,8 @@ class Agents_CheckBoxes_Panel : public wxPanel {
     wxSizer* Agents_CheckBoxes_sizer = nullptr;
 
     std::vector<wxCheckBox*> checkboxes;
+
+    void on_checkbox_click(wxCommandEvent& event);
 
 public:
     Agents_CheckBoxes_Panel(wxWindow* parent, MyFrame* Frame_with_simulation, wxWindowID id = wxID_ANY, wxSize size = wxDefaultSize);

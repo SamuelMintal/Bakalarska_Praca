@@ -23,71 +23,102 @@ Agent::Agent(std::string name, std::string color, pos start, pos finish, const s
     current = start;
 }
 
-/* moves agent to absolute time
-* parameter time is in miliseconds
-* returns true if agent successfully perfomed his action, false if not (got lost)
-* This function changes agent's current and rotation variables.
+/* Returns move state that agent would be at time 'time' if he was following plan 'plan' with it's time span being 'plan_max_time'
 */
-bool Agent::move_to_time(int time) {  
+Agent_move_state Agent::get_agents_move_state_in(const std::vector<plan_step>& plan, int plan_max_time, int time) const {
+
+    Agent_move_state ret;
+    //SKONTROLUJ CI RET VYPLNAS VSADE VSETKY TRI POLIA -> Ak je tato sracka dobre, tak prerob moveto time aby ho pouzivalo a vyrob where should i be at ... aby si to vedel narvat do draw panelu    
 
     //If I was supposed to move more than I can, I will stand at the end of my plan
-    if (time > altered_max_time) {
-        current = altered_plan[altered_plan.size() - 1].position;
+    if (time >= plan_max_time) {
+        ret.current  = plan[plan.size() - 1].position;
+        ret.rotation = plan[plan.size() - 1].rotation;
 
-        if (altered_plan[altered_plan.size() - 1].action == "endLost")
-            return false;
+        if (plan[plan.size() - 1].action == "endLost")
+            ret.succesfully_moved = false;
         else
-            return true;
+            ret.succesfully_moved = true;
+
+        return ret;
     }
 
     int tmp_time = 0;
-    for (size_t i = 0; i < altered_plan.size(); i++) {
+    for (size_t i = 0; i < plan.size(); i++) {
 
         //If I am supposed to start from following plan_step and not this
-        if (tmp_time + altered_plan[i].duration < time) { 
-            tmp_time += altered_plan[i].duration;
+        if (tmp_time + plan[i].duration < time) {
+            tmp_time += plan[i].duration;
         }
         //else movement started from i-th plan_step
         else {
 
-            if (altered_plan[i].action == "start" || altered_plan[i].action == "end" || altered_plan[i].action == "wait") {
+            if (plan[i].action == "start" || plan[i].action == "end" || plan[i].action == "wait") {
                 //Go to the starting position of this plan_step
-                current = altered_plan[i].position; 
-                rotation = altered_plan[i].rotation;
+                ret.current = plan[i].position;
+                ret.rotation = plan[i].rotation;
+                ret.succesfully_moved = true;
 
-                return true;
+                return ret;
             }
             //Else I move to the location between the 2 plan_steps
-            else if (altered_plan[i].action == "go") { 
-                current.x = altered_plan[i].position.x + (static_cast<float>((time - tmp_time)) / static_cast<float>(altered_plan[i].duration)) * (altered_plan[i + 1].position.x - altered_plan[i].position.x); //There is always i+1 th action because if i-th action was end, i didnt get into this else branch
-                current.y = altered_plan[i].position.y + (static_cast<float>((time - tmp_time)) / static_cast<float>(altered_plan[i].duration)) * (altered_plan[i + 1].position.y - altered_plan[i].position.y); //
+            else if (plan[i].action == "go") {
+                ret.current.x = plan[i].position.x + (static_cast<float>((time - tmp_time)) / static_cast<float>(plan[i].duration)) * (plan[i + 1].position.x - plan[i].position.x); //There is always i+1 th action because if i-th action was end, i didnt get into this else branch
+                ret.current.y = plan[i].position.y + (static_cast<float>((time - tmp_time)) / static_cast<float>(plan[i].duration)) * (plan[i + 1].position.y - plan[i].position.y); //
 
                 //to avoid "direction arrows" being badly orineted due to short turn time or fast simulation step time
-                rotation = altered_plan[i].rotation;
+                ret.rotation = plan[i].rotation;
+                ret.succesfully_moved = true;
 
-                return true;
+                return ret;
             }
-            else if (altered_plan[i].action == "turnLeft" || altered_plan[i].action == "turnRight") {
-                int signed_rotation = altered_plan[i].rotation + (static_cast<int>((static_cast<float>(time - tmp_time) / static_cast<float>(altered_plan[i].duration)) * (altered_plan[i].angle_to_rotate)));
+            else if (plan[i].action == "turnLeft" || plan[i].action == "turnRight") {
+                ret.current = plan[i].position;
+
+                int signed_rotation = plan[i].rotation + (static_cast<int>((static_cast<float>(time - tmp_time) / static_cast<float>(plan[i].duration)) * (plan[i].angle_to_rotate)));
                 while (signed_rotation < 0)
                     signed_rotation += 360;
 
-                rotation = signed_rotation % 360;
+                ret.rotation = signed_rotation % 360;
+                ret.succesfully_moved = true;
 
-                return true;
+                return ret;
             }
-            else if (altered_plan[i].action == "endLost") {
+            else if (plan[i].action == "endLost") {
                 //Go to the starting position of this plan_step
-                current = altered_plan[i].position; 
-                rotation = altered_plan[i].rotation;
+                ret.current = altered_plan[i].position;
+                ret.rotation = altered_plan[i].rotation;
+                ret.succesfully_moved = false;
 
-                return false;
+                return ret;
             }
         }
     }
 
     //default -> should not occur
-    return true;
+    return ret;
+}
+
+/* moves agent to absolute time
+* parameter time is in miliseconds
+* returns true if agent successfully perfomed his action, false if not (got succesfully_moved)
+* This function changes agent's current and rotation variables.
+*/
+bool Agent::move_to_time(int time) {  
+
+    auto mv_state = get_agents_move_state_in(altered_plan, altered_max_time, time);
+
+    current = mv_state.current;
+    rotation = mv_state.rotation;
+
+    return mv_state.succesfully_moved;
+}
+
+/* Returns move_state that represents where agent should at time 'time' be if he was following his plan perfectly (his original plan)
+*/
+Agent_move_state Agent::where_should_I_be(int time) const {
+
+    return get_agents_move_state_in(original_plan, original_max_time, time);
 }
 
 /* Returns plan, which agent is expected to perform
@@ -175,6 +206,10 @@ void Agent::set_errors(const std::vector<int>& errors) {
 
 void Agent::set_original_plan(std::vector<plan_step>&& vct) {
     original_plan = std::move(vct);
+    original_max_time = 0;
+    for (size_t i = 0; i < original_plan.size(); i++)
+        original_max_time += original_plan[i].duration;
+
 }
 
 void Agent::set_altered_plan(std::vector<plan_step>&& vct) {
@@ -379,7 +414,7 @@ int Simulation::set_time_diffs_of_agent_accordingly_to(int agent_index, const st
 }
 
 /*
-* returns -1 when lost, or one of 0,90,180,270 if not
+* returns -1 when succesfully_moved, or one of 0,90,180,270 if not
 */
 int Simulation::get_closest_90angle_or_lost(int angle, int fatal_angle) {
 
@@ -498,10 +533,10 @@ void Simulation::alter_plans_of_agents(int from, int to) {
                     // future_uncorrected_rotation stands for the yet uncorrected starting rotation for the next plan_step
                     int future_uncorrected_starting_rotation = original[j].rotation + original[j].angle_to_rotate + chosen_relative_angle;
 
-                    //stands for the closest 0/90/180/270 axis to the future_uncorrected_starting_rotation, or if -1 stands for that the agent has lost due to the current rotation
+                    //stands for the closest 0/90/180/270 axis to the future_uncorrected_starting_rotation, or if -1 stands for that the agent has succesfully_moved due to the current rotation
                     int closest_angle_to_altered = get_closest_90angle_or_lost(future_uncorrected_starting_rotation, tmp_error_angle_fatal);
                     if (closest_angle_to_altered == -1) {
-                        //if the agent got lost
+                        //if the agent got succesfully_moved
                         plan_step curr = original[j];
 
                         int total_angle_to_rotate = original[j].angle_to_rotate + chosen_relative_angle;
@@ -509,10 +544,10 @@ void Simulation::alter_plans_of_agents(int from, int to) {
                         altered.emplace_back(plan_step(curr.position, curr.rotation, curr.action, curr.duration, curr.id, total_angle_to_rotate));
                         altered.emplace_back(plan_step(curr.position, normalize_angle(curr.rotation + total_angle_to_rotate), "endLost", 1000, curr.id));
 
-                        //Do not want any more plan_steps once it is lost
+                        //Do not want any more plan_steps once it is succesfully_moved
                         break;
                     }
-                    else { //else if the agent did not get lost                                                             
+                    else { //else if the agent did not get succesfully_moved                                                             
 
                         // angle_to_be_corrected is an angle that the agent will have to travell in order to be corrected (heading on 0/90/180/270 axis)
                         int angle_to_be_corrected = get_angle_to_be_corrected(future_uncorrected_starting_rotation, closest_angle_to_altered);
@@ -563,12 +598,12 @@ void Simulation::alter_plans_of_agents(int from, int to) {
                 else if (curr.rotation == 270)
                     future_step_pos.x -= 2;
 
-                //if I will get lost
+                //if I will get succesfully_moved
                 if (is_position_out_of_map(future_step_pos) || is_obstacle_on_position(future_step_pos)) {
 
                     altered.emplace_back(plan_step(future_step_pos, curr.rotation, "endLost", 1000, curr.id));
 
-                    //Do not want any more plan_steps once it is lost
+                    //Do not want any more plan_steps once it is succesfully_moved
                     break;
                 }
                 else {

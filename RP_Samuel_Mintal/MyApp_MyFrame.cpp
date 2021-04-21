@@ -73,6 +73,8 @@ void MyFrame::reload_panels_data() {
     panel_agents->update_data();
     panel_extended_controls->reload_data();
     agents_checkboxes_panel->reload_data();
+
+    panel_simulation->paintNow();
 }
 
 void MyFrame::thread_simulation_step(wxTimerEvent& event) {
@@ -93,7 +95,6 @@ void MyFrame::thread_simulation_step() {
     panel_simulation->paintNow();
 
     if(!moved) {        
-        current_time_of_simulation = 0;
         simulaton_timer.Stop();
         panel_buttons->set_GoPause_label_to("Go");
     }
