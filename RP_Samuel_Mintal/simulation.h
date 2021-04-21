@@ -124,7 +124,8 @@ public:
     std::string get_name() const;
     pos get_current_position();
     int get_rotation();
-    auto get_altered_plan_length();
+    auto get_altered_plan_length() const;
+    auto get_original_plan_length() const;
     std::vector<plan_step> get_altered_plan() const;
     std::vector<int> get_err_vector();
     std::vector<plan_step> get_original_plan() const;

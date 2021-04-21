@@ -27,8 +27,8 @@ MyFrame::MyFrame()
     panel_agents = new Agent_Info_Panel(notebook, this, ID_panel_agents, wxDefaultPosition, wxSize(100, 100));
     agents_checkboxes_panel = new Agents_CheckBoxes_Panel(notebook, this);
     notebook->AddPage(panel_agents, "Agents Info", true);
-    notebook->AddPage(agents_checkboxes_panel, "CheckBoxes");
-    //notebook->AddPage(new Agent_Info_Panel(notebook, this, ID_panel_agents, wxDefaultPosition, wxSize(100, 100)), "kokotko");
+    notebook->AddPage(agents_checkboxes_panel, "Expected Course");
+    
 
     //Setting up panels in frame    
     panel_buttons = new Buttons_Panel(this, this, ID_panel_buttons, wxDefaultPosition, wxSize(100, 100));

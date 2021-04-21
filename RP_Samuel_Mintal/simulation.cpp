@@ -86,8 +86,8 @@ Agent_move_state Agent::get_agents_move_state_in(const std::vector<plan_step>& p
             }
             else if (plan[i].action == "endLost") {
                 //Go to the starting position of this plan_step
-                ret.current = altered_plan[i].position;
-                ret.rotation = altered_plan[i].rotation;
+                ret.current = plan[i].position;
+                ret.rotation = plan[i].rotation;
                 ret.succesfully_moved = false;
 
                 return ret;
@@ -169,8 +169,12 @@ int Agent::get_rotation() {
     return rotation;
 }
 
-auto Agent::get_altered_plan_length() {
+auto Agent::get_altered_plan_length() const {
     return altered_max_time;
+}
+
+auto Agent::get_original_plan_length() const {
+    return original_max_time;
 }
 
 std::vector<plan_step>  Agent::get_altered_plan() const {
@@ -645,8 +649,8 @@ void Simulation::update_agent_plan_max_length() {
     agent_plan_max_length = 0;
 
     for (auto& agent : agents)
-        if (agent.get_altered_plan_length() > agent_plan_max_length)
-            agent_plan_max_length = agent.get_altered_plan_length();
+        if (std::max(agent.get_altered_plan_length(), agent.get_original_plan_length()) > agent_plan_max_length)
+            agent_plan_max_length = std::max(agent.get_altered_plan_length(), agent.get_original_plan_length());
 }
 
 /* Returns index to specified agent's timediff field relevant for time

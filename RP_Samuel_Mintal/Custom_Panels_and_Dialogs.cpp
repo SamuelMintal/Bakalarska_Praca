@@ -699,9 +699,9 @@
 
         for (size_t i = 1; i < plan.size() + 1; i++) {
             auto current_step = plan[i - 1];
-
+            
+            ret->SetColSize(i, static_cast<int>(static_cast<float>(current_step.duration) * scaler));
             ret->SetCellValue(0, i, current_step.action);
-            ret->SetColSize(i, current_step.duration * scaler);
             // +1 because the colors[0] is the agents color and colors[1] is the color of steps with id == 0;
             ret->SetCellBackgroundColour(0, i, colors[current_step.id + 1]);                        
         }                       
@@ -756,7 +756,7 @@
 
         //Add them to sizer
         for (size_t i = 0; i < plans_of_agents.size(); i++) {
-            Agents_Plans_Panel_sizer->Add(plans_of_agents[i], wxEXPAND);
+            Agents_Plans_Panel_sizer->Add(plans_of_agents[i]/*, wxEXPAND*/);
 
             if(i % 2)
                 Agents_Plans_Panel_sizer->AddSpacer(20);
