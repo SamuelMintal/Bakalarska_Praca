@@ -5,6 +5,7 @@
 #include <wx/wx.h>
 #endif
 
+#include <wx/notebook.h>
 //#include "RP_icon.XPM" - TODO, nefunguje
 
 #include "simulation.h"
@@ -59,6 +60,7 @@ private:
     Draw_Panel* panel_simulation = nullptr;
     Extended_controls_panel* panel_extended_controls = nullptr;
     Error_Dialog* dialog_robot_errors = nullptr;
+    wxNotebook* notebook = nullptr;
 
     // Sizers
     wxBoxSizer* sizer_frame_horizontal = nullptr;

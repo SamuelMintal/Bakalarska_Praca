@@ -20,17 +20,25 @@ bool MyApp::OnInit()
 MyFrame::MyFrame()
     : wxFrame(NULL, wxID_ANY, "MAPF Errors Simulator")
 {
-    //setting up panels in frame
+    //Setting up notebook
+    notebook = new wxNotebook(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxNB_TOP);
+
+    //setting up panels in notebook and adding them there
+    panel_agents = new Agent_Info_Panel(notebook, this, ID_panel_agents, wxDefaultPosition, wxSize(100, 100));
+    notebook->AddPage(panel_agents, "Agents Info", true);
+    //notebook->AddPage(new Agent_Info_Panel(notebook, this, ID_panel_agents, wxDefaultPosition, wxSize(100, 100)), "kokotko");
+
+    //Setting up panels in frame    
     panel_buttons = new Buttons_Panel(this, this, ID_panel_buttons, wxDefaultPosition, wxSize(100, 100));
-    panel_simulation = new Draw_Panel(this, this, ID_panel_simulation, wxSize(500, 200));
-    panel_agents = new Agent_Info_Panel(this, this, ID_panel_agents, wxDefaultPosition, wxSize(100, 100));
+    panel_simulation = new Draw_Panel(this, this, ID_panel_simulation, wxSize(500, 200));    
     panel_extended_controls = new Extended_controls_panel(this, this, ID_panel_extended_controls, wxDefaultPosition, wxSize(20, 20));
 
     //Adding them into the first (horizontal) sizer
     sizer_frame_horizontal = new wxBoxSizer(wxHORIZONTAL);
     sizer_frame_horizontal->Add(panel_buttons, 0, wxLEFT | wxEXPAND | wxALL, 10);
-    sizer_frame_horizontal->Add(panel_simulation, 3, wxRIGHT | wxEXPAND | wxALL, 10);
-    sizer_frame_horizontal->Add(panel_agents, 0, wxRIGHT | wxEXPAND | wxALL, 10);
+    sizer_frame_horizontal->Add(panel_simulation, 3, wxRIGHT | wxEXPAND | wxALL, 10);         
+    sizer_frame_horizontal->Add(notebook, 0, wxRIGHT | wxEXPAND | wxALL, 10);
+    
 
     //Group them into the main (vertical) sizer
     sizer_frame_vertical_final = new wxBoxSizer(wxVERTICAL);
