@@ -28,7 +28,6 @@ Agent::Agent(std::string name, std::string color, pos start, pos finish, const s
 Agent_move_state Agent::get_agents_move_state_in(const std::vector<plan_step>& plan, int plan_max_time, int time) const {
 
     Agent_move_state ret;
-    //SKONTROLUJ CI RET VYPLNAS VSADE VSETKY TRI POLIA -> Ak je tato sracka dobre, tak prerob moveto time aby ho pouzivalo a vyrob where should i be at ... aby si to vedel narvat do draw panelu    
 
     //If I was supposed to move more than I can, I will stand at the end of my plan
     if (time >= plan_max_time) {
