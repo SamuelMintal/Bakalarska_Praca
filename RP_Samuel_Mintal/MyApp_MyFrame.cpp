@@ -160,6 +160,11 @@ void MyFrame::On_button_set_agents_errors(wxCommandEvent& event) {
 
 void MyFrame::On_button_about(wxCommandEvent& event) {
 
+
+    auto plan = simulation.get_expected_plan_from_time(140000, simulation.show_agents()[0]);
+    simulation.show_agents()[0].set_altered_plan(std::move(plan));
+    reload_panels_data();
+
     //Sort of super quick quide
     wxMessageBox("This is a MAPF error simulator. \n At first you need to load a plan and set action durations. \n Then set desired errors for agents \n And lastly start the simulation",
         "About MAPF error simulator", wxOK | wxICON_INFORMATION);

@@ -120,37 +120,6 @@ Agent_move_state Agent::where_should_I_be(int time) const {
     return get_agents_move_state_in(original_plan, original_max_time, time);
 }
 
-/* Returns plan, which agent is expected to perform
-*  - altered plan until now, then original plan
-* Used to calculate potential collisions
-*/
-std::vector<plan_step> Agent::get_expected_plan_from_time(int time) const {
-
-    std::vector<plan_step> expected_plan;
-    return expected_plan;
-
-
-
-
-
-    ////collect the altered plan until time time to the expected_plan
-    //for (int curr_step_idx = 0, curr_build_time = 0; curr_step_idx < altered_plan.size(); curr_step_idx++) {
-
-    //    curr_build_time += altered_plan[curr_step_idx].duration;
-
-
-    //    
-    //    if (curr_build_time > time)
-    //        break;
-
-
-    //}
-
-    //Add the rest from the original
-   
-
-
-}
 
 std::string Agent::get_color() const {
     return color;
@@ -243,9 +212,104 @@ void Agent::set_altered_plan(const std::vector<plan_step>& vct, int total_altere
 Simulation::Simulation() {}
 
 /**************************************************************************************************************************************************************************/
+/************************************************************   COLLISIONS   *********************************************************************************************/
+
+/* Returns plan, which agent is expected to perform
+*  - altered plan until now, then original plan
+* Used to calculate potential collisions
+*/
+std::vector<plan_step> Simulation::get_expected_plan_from_time(int time,const Agent& agt) const {
+
+    std::vector<plan_step> expected_plan;
+    auto altered_plan = agt.get_altered_plan();
+    auto original_plan = agt.get_original_plan();
+
+    int last_id = 0;
+    int current_time = 0;
+
+    
+    //collect the altered plan until time time to the expected_plan
+    for (auto it = altered_plan.begin(); it != altered_plan.end();) {
+
+        last_id = it->id;
+        if (current_time < time) {
+            //for all plan_steps with the same id
+            while (it != altered_plan.end() && it->id == last_id) {
+                expected_plan.push_back(*it);
+                current_time += it->duration;
+
+                if (it->action == "endLost") {
+                    
+                    return expected_plan;
+                }
+
+                it++;
+            }
+        }
+        else {
+            break;
+        }        
+    }
+
+    
+        //Add the rest from the original
+    if (expected_plan.size() == 0)
+        //if nothing was added from the altered plan then expected plan is the original
+        expected_plan = original_plan;
+
+    else {
+        //Add the rest from the original plan
+        for (auto it = original_plan.begin(); it != original_plan.end(); it++) {
+            if (it->id >= last_id) {
+                    
+                plan_step last_ps = expected_plan[expected_plan.size() - 1];
+
+                    if (last_ps.action == "go") {
+
+                        pos new_act_pos = last_ps.position;                            
+
+                        if (last_ps.rotation == 0)
+                            new_act_pos.y -= 2;
+                        else if (last_ps.rotation == 90)
+                            new_act_pos.x += 2;
+                        else if (last_ps.rotation == 180)
+                            new_act_pos.y += 2;
+                        else if (last_ps.rotation == 270)
+                            new_act_pos.x -= 2;
+
+                            //if I will get succesfully_moved
+                        if (is_position_out_of_map(new_act_pos) || is_obstacle_on_position(new_act_pos)) {
+
+                            expected_plan.emplace_back(plan_step(new_act_pos, last_ps.rotation, "endLost", 1000, it->id, it->angle_to_rotate));
+
+                            //Do not want any more plan_steps once it is succesfully_moved
+                            break;
+                        }
+                        else {
+                            expected_plan.emplace_back(plan_step(new_act_pos, last_ps.rotation, it->action, it->duration, it->id, it->angle_to_rotate));
+                        }
+
+                    }
+                    else if (last_ps.action == "turnRight" || last_ps.action == "turnLeft") {
+                        expected_plan.emplace_back(plan_step(last_ps.position, normalize_angle(last_ps.rotation + last_ps.angle_to_rotate), it->action, it->duration, it->id, it->angle_to_rotate));
+                    }                        
+                    else { //action == wait || begin
+                        expected_plan.emplace_back(plan_step(last_ps.position, last_ps.rotation, it->action, it->duration, it->id, it->angle_to_rotate));
+                    }
+                                               
+            }
+        }
+    }
+
+
+
+    return expected_plan;
+}
+
+/**************************************************************************************************************************************************************************/
 /************************************************************   ALTER PLANS   *********************************************************************************************/
 
-bool Simulation::is_position_out_of_map(const pos& position) {
+bool Simulation::is_position_out_of_map(const pos& position) const {
 
     if (map.size() == 0)
         return true;
@@ -260,7 +324,7 @@ bool Simulation::is_position_out_of_map(const pos& position) {
 /* Also checks if position is within the map
 * if it's not, it returns true, because the agent should be able to get there, same as with obstacle
 */
-bool Simulation::is_obstacle_on_position(const pos& position) {
+bool Simulation::is_obstacle_on_position(const pos& position) const {
 
     if (is_position_out_of_map(position))
         return false;
@@ -271,7 +335,7 @@ bool Simulation::is_obstacle_on_position(const pos& position) {
 
 /* Transforms any angle to range of 0 < angle <= 360
 */
-int Simulation::normalize_angle(int angle) {
+int Simulation::normalize_angle(int angle) const {
     while (angle < 0)
         angle += 360;
     angle = angle % 360;
@@ -1289,7 +1353,7 @@ const std::vector<std::vector<char>>& Simulation::show_map() {
 /*
 * Gives only const reference
 */
-const std::vector<Agent>& Simulation::show_agents() {
+ std::vector<Agent>& Simulation::show_agents() {
     return agents;
 }
 

@@ -114,12 +114,6 @@ public:
     */
     Agent_move_state where_should_I_be(int time) const;
 
-    /* Returns plan, which agent is expected to perform
-    *  - altered plan until now, then original plan
-    * Used to calculate potential collisions
-    */
-    std::vector<plan_step> get_expected_plan_from_time(int time) const;
-
     std::string get_color() const;
     std::string get_name() const;
     pos get_current_position();
@@ -156,20 +150,28 @@ class Simulation {
     //time span of the longest plan out of all agents
     int agent_plan_max_length = 0;
 
-
+    /**************************************************************************************************************************************************************************/
+    /************************************************************   COLLISIONS   *********************************************************************************************/
+public:
+    /* Returns plan, which agent is expected to perform
+    *  - altered plan until now, then original plan
+    * Used to calculate potential collisions
+    */
+    std::vector<plan_step> get_expected_plan_from_time(int time, const Agent& agt) const;
+private:
     /**************************************************************************************************************************************************************************/
     /************************************************************   ALTER PLANS   *********************************************************************************************/
     
-    bool is_position_out_of_map(const pos& position);
+    bool is_position_out_of_map(const pos& position) const;
 
     /* Also checks if position is within the map
     * if it's not, it returns true, because the agent should be able to get there, same as with obstacle
     */
-    bool is_obstacle_on_position(const pos& position);
+    bool is_obstacle_on_position(const pos& position) const;
 
     /* Transforms any angle to range of 0 < angle <= 360
     */
-    int normalize_angle(int angle);
+    int normalize_angle(int angle) const;
 
     /* u == 0 always
     */
@@ -293,7 +295,7 @@ public:
     /*
     * Gives only const reference
     */
-    const std::vector<Agent>& show_agents();
+     std::vector<Agent>& show_agents();
 
     /*
     * returns the time spam of the simulation
