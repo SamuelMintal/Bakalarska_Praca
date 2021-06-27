@@ -8,7 +8,7 @@
 #include <wx/notebook.h>
 //#include "RP_icon.XPM" - TODO, nefunguje
 
-#include "simulation.h"
+#include "simulation.hpp"
 #include "Enums.h"
 #include "Custom_Panels_and_Dialogs.h"
 

@@ -1,4 +1,4 @@
-#include "simulation.h"
+#include "simulation.hpp"
 
 
 /**************************************************************************************************************************************/
@@ -1266,7 +1266,22 @@ bool Simulation::move_to_time(int time) {
 
         //But return false anyway
         return false;
+    }    
+
+
+
+    std::vector <std::vector<plan_step>> expected_plans;
+
+    for (size_t i = 0; i < agents.size(); i++) {
+        expected_plans.push_back(get_expected_plan_from_time(time, agents[i]));
     }
+    
+    std::unique_ptr<ICollision_Detection> cd = std::make_unique<Line_Detection>();
+
+    detection_result a = cd->execute_detection(expected_plans, agents, time);
+
+
+
 
 
     int idx = 0;

@@ -7,6 +7,7 @@
 #include <sstream>
 #include <stdlib.h> 
 
+
 struct pos {
     float x = 0.0;
     float y = 0.0;
@@ -137,7 +138,7 @@ public:
 
 
 
-
+#include "Collision_Detections.hpp"
 
 class Simulation {
     std::vector<std::vector<char>> map;

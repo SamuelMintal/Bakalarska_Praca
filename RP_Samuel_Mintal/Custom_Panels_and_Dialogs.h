@@ -9,7 +9,7 @@
 
 #include "MyApp_MyFrame.h"
 #include "Enums.h"
-#include "simulation.h"
+#include "simulation.hpp"
 
 class MyFrame;
 

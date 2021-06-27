@@ -24,11 +24,11 @@
     <ClCompile Include="simulation.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Collision_Detections.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="simulation.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="MyApp_MyFrame.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -36,6 +36,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Enums.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Collision_Detections.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="simulation.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
