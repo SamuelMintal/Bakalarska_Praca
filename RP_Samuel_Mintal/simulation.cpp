@@ -1276,7 +1276,7 @@ bool Simulation::move_to_time(int time) {
         expected_plans.push_back(get_expected_plan_from_time(time, agents[i]));
     }
     
-    std::unique_ptr<ICollision_Detection> cd = std::make_unique<Line_Detection>();
+    std::unique_ptr<ICollision_Detection> cd = std::make_unique<Rectangle_Detection>(9000);
 
     detection_result a = cd->execute_detection(expected_plans, agents, time);
 
