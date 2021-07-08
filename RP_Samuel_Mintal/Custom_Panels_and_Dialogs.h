@@ -191,6 +191,8 @@ class Buttons_Panel : public wxPanel {
     wxButton* button_about = nullptr;
     wxButton* button_set_common_robot_errors = nullptr;
     wxButton* button_set_agents_errors = nullptr;
+    wxButton* button_change_detection_method = nullptr;
+    wxButton* button_restore_backup = nullptr;
 
     wxBoxSizer* sizer_panel_buttons = nullptr;
 
@@ -199,6 +201,8 @@ public:
     Buttons_Panel(wxWindow* parent, MyFrame* Frame_with_simulation, int id, const wxPoint& position, const wxSize& size);
 
     void set_GoPause_label_to(const std::string& new_label);
+
+    void set_enable_disable_backup_button(bool value);
 
 };
 
@@ -306,3 +310,30 @@ public:
 
 
 
+
+
+
+class Collision_detection_Dialog : public wxDialog {
+
+#define DEFAULT_DETECTION_METHOD "Variable_Sampling_Detection"
+
+    std::string chosen_detection_method = "";
+
+    //Static text
+    wxStaticText* txt_dialogs_title = nullptr;
+
+    //List Box
+    wxListBox* list_box = nullptr;
+
+    //Button
+    wxButton* button_set = nullptr;
+
+    //Sizer
+    wxSizer* Collision_detection_sizer = nullptr;
+    
+public:
+
+    Collision_detection_Dialog();
+   
+    std::string get_data();    
+};

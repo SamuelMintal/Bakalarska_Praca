@@ -3,15 +3,7 @@
 #include <algorithm> // for std::sort
 #include <limits> // for std::max
 
-
-struct detection_result {
-	bool collision_detected = false;
-	int agent1_index = 0;
-	int agent2_index = 0;
-	int from_time = 0;
-	int to_time = 0;
-	pos at_position;
-};
+#include "Structs.hpp"
 
 
 class ICollision_Detection {	
@@ -64,7 +56,8 @@ class Rectangle_Detection : public ICollision_Detection {
 
 
 public:
-
+	/* time distance for making rectangles
+	*/
 	Rectangle_Detection(int distance);
 
 	detection_result execute_detection(std::vector<std::vector<plan_step>>& plans, std::vector<Agent>& agents, int from_time);
@@ -74,7 +67,7 @@ public:
 
 class Sampling_Detection : public ICollision_Detection {
 
-	float const_error_distance = 0.1;
+	float const_error_distance = 0.2;
 	int const_sampling_amplitude_ms = 10;
 	int const_max_sampling = 1;
 	int const_min_sampling = 10;
@@ -84,15 +77,15 @@ class Sampling_Detection : public ICollision_Detection {
 
 	float get_distance_of(const pos& p1, const pos& p2);
 
-	float get_distance_to_the_closest_pos(const std::vector<pos>& positions, int index);
+	int get_max_plan_span(const std::vector<std::vector<plan_step>>& plans);
 
-	std::vector<float> get_distances_to_the_closest_agents_at_time(int time, const std::vector<Agent>& agents, const std::vector<std::vector<plan_step>>& plans);
+	float get_distance_to_the_closest_pos(const std::vector<pos>& positions, int index);	
 
-	int get_sampling_rate(float closest_distance);
+	size_t get_sampling_rate(float closest_distance);
 
 public:
 
-	Sampling_Detection(const std::vector<std::vector<char>>& map, int error_distance, int sampling_amplitude_ms, int max_sampling, int min_sampling);
+	Sampling_Detection(const std::vector<std::vector<char>>& map, float error_distance = 0.2, int sampling_amplitude_ms = 10, int max_sampling = 1, int min_sampling = 10);
 
 	detection_result execute_detection(std::vector<std::vector<plan_step>>& plans, std::vector<Agent>& agents, int from_time);
 

@@ -47,6 +47,8 @@ private:
     void On_button_about(wxCommandEvent& event);
     void OnExit(wxCommandEvent& event);
     void OnGoPause(wxCommandEvent& event);
+    void OnChangeMethod(wxCommandEvent& event);
+    void OnRestore(wxCommandEvent& event);
 
 
     void thread_simulation_step(wxTimerEvent& event); //Being called by wxTimer
@@ -73,4 +75,8 @@ private:
     Simulation simulation;
     size_t current_time_of_simulation = 0;
     wxTimer simulaton_timer; //initialized as stopped   
+
+    //Collision detection related stuff
+    bool made_backup = false;
+    Simulation backup;
 }; 

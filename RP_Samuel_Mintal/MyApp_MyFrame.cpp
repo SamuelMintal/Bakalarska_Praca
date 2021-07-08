@@ -56,6 +56,8 @@ MyFrame::MyFrame()
     Bind(wxEVT_BUTTON, &MyFrame::OnStop, this, ID_button_Stop);        
     Bind(wxEVT_BUTTON, &MyFrame::On_button_set_agents_errors, this, ID_button_set_agents_errors);
     Bind(wxEVT_BUTTON, &MyFrame::On_button_load_plan, this, ID_button_load_plan);
+    Bind(wxEVT_BUTTON, &MyFrame::OnChangeMethod, this, ID_button_change_detection_method);
+    Bind(wxEVT_BUTTON, &MyFrame::OnRestore, this, ID_button_restore_backup);
 
     simulaton_timer.Bind(wxEVT_TIMER, &MyFrame::thread_simulation_step, this);
 }
@@ -90,8 +92,23 @@ void MyFrame::thread_simulation_step() {
 
     //moved == true if at least one agent moved
     bool moved = simulation.move_to_time(current_time_of_simulation);
-    update_panels_data();
 
+    if (simulation.last_detection_result.collision_detected && !made_backup) {
+
+        //Chces koliziu vidiet ci nie? ak nie tak ju uloz aby si sa nepytal dokola na tu istu.
+        //ako ano tak sprav toto co tu je teraz
+
+        made_backup = true;
+        panel_buttons->set_enable_disable_backup_button(true);
+        backup = simulation;
+
+        simulation.set_to_expected_plans_state(simulation.last_detection_result.from_time);
+        reload_panels_data();
+    }
+    else {
+        update_panels_data();
+    }
+        
     panel_simulation->paintNow();
 
     if(!moved) {        
@@ -136,9 +153,11 @@ void  MyFrame::On_button_load_plan(wxCommandEvent& event) {
         dur_dialog.ShowModal(); //Retrievs the data even if user clicked X
         auto actions_duration = dur_dialog.get_data();
         
+        Collision_detection_Dialog coll_diag;
+        coll_diag.ShowModal();        
 
         simulation.load_plans(OpenDialog.GetPath().ToStdString(), actions_duration);
-
+        simulation.chosen_detection_method = coll_diag.get_data();
 
         if (simulaton_timer.IsRunning()) {
             simulaton_timer.Stop();
@@ -158,12 +177,26 @@ void MyFrame::On_button_set_agents_errors(wxCommandEvent& event) {
     reload_panels_data();
 }
 
-void MyFrame::On_button_about(wxCommandEvent& event) {
+void MyFrame::OnChangeMethod(wxCommandEvent& event) {
+    Collision_detection_Dialog coll_diag;
+    coll_diag.ShowModal();
+    simulation.chosen_detection_method = coll_diag.get_data();
+}
 
+void MyFrame::OnRestore(wxCommandEvent& event) {
+    
+    simulation = backup;
 
-    auto plan = simulation.get_expected_plan_from_time(140000, simulation.show_agents()[0]);
-    simulation.show_agents()[0].set_altered_plan(std::move(plan));
+    current_time_of_simulation = 0;
+    simulation.move_to_time(0);
+
     reload_panels_data();
+
+    made_backup = false;
+    panel_buttons->set_enable_disable_backup_button(false);    
+}
+
+void MyFrame::On_button_about(wxCommandEvent& event) {
 
     //Sort of super quick quide
     wxMessageBox("This is a MAPF error simulator. \n At first you need to load a plan and set action durations. \n Then set desired errors for agents \n And lastly start the simulation",

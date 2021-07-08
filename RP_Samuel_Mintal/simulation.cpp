@@ -306,6 +306,22 @@ std::vector<plan_step> Simulation::get_expected_plan_from_time(int time,const Ag
     return expected_plan;
 }
 
+void Simulation::set_to_expected_plans_state(int time) {
+
+    std::vector <std::vector<plan_step>> expected_plans;
+    for (size_t i = 0; i < agents.size(); i++)
+        expected_plans.push_back(get_expected_plan_from_time(time, agents[i]));
+
+    std::vector<int> err = { 0, 0, 0, 0, 0 };
+
+    for (size_t i = 0; i < agents.size(); i++) {    
+        agents[i].set_original_plan(std::move(expected_plans[i]));
+
+        auto agt_name = agents[i].get_name();
+        set_errors_to_agent(agt_name, err);
+    }
+}
+
 /**************************************************************************************************************************************************************************/
 /************************************************************   ALTER PLANS   *********************************************************************************************/
 
@@ -1202,6 +1218,8 @@ void Simulation::load_plans(std::string path, const std::vector<int>& plan_step_
     map.clear();
     time_diffs_of_agents.clear();
     agent_plan_max_length = 0;
+    chosen_detection_method = "";
+    last_detection_result.collision_detected = false;
 
 
     std::string line;
@@ -1269,18 +1287,33 @@ bool Simulation::move_to_time(int time) {
     }    
 
 
-
+    //Creating expected plans
     std::vector <std::vector<plan_step>> expected_plans;
-
-    for (size_t i = 0; i < agents.size(); i++) {
+    for (size_t i = 0; i < agents.size(); i++) 
         expected_plans.push_back(get_expected_plan_from_time(time, agents[i]));
-    }
     
-    std::unique_ptr<ICollision_Detection> cd = std::make_unique<Rectangle_Detection>(9000);
+    //std::string chosen_detection_method = "";
+    //detection_result last_detection_result;
+    //wx_method_names.Add("Line_Detection");
+    //wx_method_names.Add("Variable_Sampling_Detection");
+    //wx_method_names.Add("Rectangle_Detection");
+    std::unique_ptr<ICollision_Detection> cd;
 
-    detection_result a = cd->execute_detection(expected_plans, agents, time);
-
-
+    if(chosen_detection_method == "Line_Detection") 
+        cd = std::make_unique<Line_Detection>();
+    else if(chosen_detection_method == "Variable_Sampling_Detection")
+        cd = std::make_unique<Sampling_Detection>(map);    
+    else if(chosen_detection_method == "Rectangle_Detection")
+        cd = std::make_unique<Rectangle_Detection>(20);    
+    
+    if (cd)
+        last_detection_result = cd->execute_detection(expected_plans, agents, time);
+    else
+        last_detection_result.collision_detected = false;
+    
+    //if (last_detection_result.collision_detected) {
+    //    last_detection_result.collision_detected = true;
+    //}
 
 
 

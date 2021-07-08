@@ -7,11 +7,8 @@
 #include <sstream>
 #include <stdlib.h> 
 
+#include "Structs.hpp"
 
-struct pos {
-    float x = 0.0;
-    float y = 0.0;
-};
 
 /* Stuff that agent changes on istelf when it moves
 */
@@ -138,15 +135,20 @@ public:
 
 
 
+
 #include "Collision_Detections.hpp"
+
+
+
+
 
 class Simulation {
     std::vector<std::vector<char>> map;
     std::vector<Agent> agents;
-    std::vector<std::vector<Time_diff_error>> time_diffs_of_agents;
+    std::vector<std::vector<Time_diff_error>> time_diffs_of_agents;    
 
     // ERROR IS CONSIDERED ONLY IF AGENT IS LATE OR SOONER THEN 1000 ms
-    const int ERROR_TRESHOLD = 1000;
+    /*const*/ int ERROR_TRESHOLD = 1000;
 
     //time span of the longest plan out of all agents
     int agent_plan_max_length = 0;
@@ -159,6 +161,14 @@ public:
     * Used to calculate potential collisions
     */
     std::vector<plan_step> get_expected_plan_from_time(int time, const Agent& agt) const;
+
+    /* When collision is detected, this will set the simulation to do expected plans etc,
+    * UNABLE TO ROLL BACK, make backup if you wish to do so
+    */
+    void set_to_expected_plans_state(int time);
+
+    std::string chosen_detection_method = "";
+    detection_result last_detection_result;
 private:
     /**************************************************************************************************************************************************************************/
     /************************************************************   ALTER PLANS   *********************************************************************************************/

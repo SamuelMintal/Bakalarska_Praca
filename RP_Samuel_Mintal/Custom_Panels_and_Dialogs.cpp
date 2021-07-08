@@ -357,6 +357,8 @@
         button_stop = new wxButton(this, ID_button_Stop, "Stop", wxDefaultPosition, wxSize(150, 50));        
         button_load_plan = new wxButton(this, ID_button_load_plan, "Load Plan", wxDefaultPosition, wxSize(150, 50));
         button_set_agents_errors = new wxButton(this, ID_button_set_agents_errors, "Set Agents Errors", wxDefaultPosition, wxSize(150, 50));
+        button_change_detection_method = new wxButton(this, ID_button_change_detection_method, "Set Detection Method", wxDefaultPosition, wxSize(150, 50));
+        button_restore_backup = new wxButton(this, ID_button_restore_backup, "Restore Backup", wxDefaultPosition, wxSize(150, 25));
 
         sizer_panel_buttons = new wxBoxSizer(wxVERTICAL);
         sizer_panel_buttons->Add(button_about, 1, wxEXPAND | wxALL, 10);
@@ -364,12 +366,22 @@
         sizer_panel_buttons->Add(button_stop, 1, wxEXPAND | wxALL, 10);        
         sizer_panel_buttons->Add(button_load_plan, 1, wxEXPAND | wxALL, 10);
         sizer_panel_buttons->Add(button_set_agents_errors, 1, wxEXPAND | wxALL, 10);
+        sizer_panel_buttons->Add(button_change_detection_method, 1, wxEXPAND | wxALL, 10);
+        sizer_panel_buttons->Add(button_restore_backup, 1, wxEXPAND | wxALL, 10);
+
+        button_restore_backup->Enable(false);
+
         SetSizerAndFit(sizer_panel_buttons);
     }
 
     void Buttons_Panel::set_GoPause_label_to(const std::string& new_label) {
 
         button_GoPause->SetLabel(new_label);
+    }
+
+    void Buttons_Panel::set_enable_disable_backup_button(bool value) {
+
+        button_restore_backup->Enable(value);
     }
 
 
@@ -877,3 +889,62 @@
         
         return ret;
     }
+
+
+
+
+
+
+
+
+
+    /*
+    *
+    **** class Collision_detection_Dialog : public wxDialog
+    *
+    */
+
+
+
+ 
+
+    //public:
+
+    Collision_detection_Dialog::Collision_detection_Dialog() 
+        : wxDialog(nullptr, wxID_ANY, "Choose CDM") {
+
+        chosen_detection_method = "";
+
+        Collision_detection_sizer = new wxBoxSizer(wxVERTICAL);
+
+        txt_dialogs_title = new wxStaticText(this, wxID_ANY, "Choose which collision detection method you want to be used.");
+        Collision_detection_sizer->Add(txt_dialogs_title, 0, wxALL, 10);
+        Collision_detection_sizer->AddSpacer(20);
+
+
+
+        wxArrayString wx_method_names;
+
+        //wx_method_names.Add("None");
+        wx_method_names.Add("Line_Detection");
+        wx_method_names.Add("Variable_Sampling_Detection");
+        wx_method_names.Add("Rectangle_Detection");
+        
+        list_box = new wxListBox(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wx_method_names);
+        Collision_detection_sizer->Add(list_box, 2, wxEXPAND | wxALL, 10);
+        Collision_detection_sizer->AddSpacer(20);
+
+        button_set = new wxButton(this, wxID_OK, "Set", wxDefaultPosition, wxSize(150, 50));
+        Collision_detection_sizer->Add(button_set, 2, wxEXPAND | wxALL, 10);
+
+        SetSizerAndFit(Collision_detection_sizer);
+    }
+
+    std::string Collision_detection_Dialog::get_data() {
+
+        if (list_box->GetSelection() == -1)
+            return DEFAULT_DETECTION_METHOD;
+
+        return list_box->GetString(list_box->GetSelection()).ToStdString();
+    }
+    

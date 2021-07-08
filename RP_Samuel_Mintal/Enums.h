@@ -17,6 +17,8 @@ enum {
     ID_button_set_common_robot_errors_CONFIRM = 14,
     ID_button_set_agents_errors = 15,
     ID_button_about = 16,
+    ID_button_change_detection_method = 17,
+    ID_button_restore_backup = 18,
 
     ID_button_set_agents_errors_CONFIRM = 20,
     ID_button_set_agents_errors_REJECT = 21

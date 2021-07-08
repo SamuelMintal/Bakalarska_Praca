@@ -160,6 +160,7 @@
     <ClInclude Include="Enums.h" />
     <ClInclude Include="MyApp_MyFrame.h" />
     <ClInclude Include="simulation.hpp" />
+    <ClInclude Include="Structs.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="RP_icon.XPM" />
