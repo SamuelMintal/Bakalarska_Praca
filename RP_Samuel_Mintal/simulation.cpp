@@ -1303,8 +1303,10 @@ bool Simulation::move_to_time(int time) {
         cd = std::make_unique<Line_Detection>();
     else if(chosen_detection_method == "Variable_Sampling_Detection")
         cd = std::make_unique<Sampling_Detection>(map);    
+    else if (chosen_detection_method == "Static_Sampling_Detection")
+        cd = std::make_unique<Static_Sampling_Detection>();
     else if(chosen_detection_method == "Rectangle_Detection")
-        cd = std::make_unique<Rectangle_Detection>(20);    
+        cd = std::make_unique<Rectangle_Detection>(2000);    
     
     if (cd)
         last_detection_result = cd->execute_detection(expected_plans, agents, time);

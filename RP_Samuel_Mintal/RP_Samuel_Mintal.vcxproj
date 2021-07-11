@@ -153,6 +153,7 @@
     <ClCompile Include="Custom_Panels_and_Dialogs.cpp" />
     <ClCompile Include="MyApp_MyFrame.cpp" />
     <ClCompile Include="simulation.cpp" />
+    <ClCompile Include="Testing_code.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Collision_Detections.hpp" />

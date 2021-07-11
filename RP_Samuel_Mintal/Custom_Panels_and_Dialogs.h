@@ -315,7 +315,7 @@ public:
 
 class Collision_detection_Dialog : public wxDialog {
 
-#define DEFAULT_DETECTION_METHOD "Variable_Sampling_Detection"
+#define DEFAULT_DETECTION_METHOD "None"
 
     std::string chosen_detection_method = "";
 

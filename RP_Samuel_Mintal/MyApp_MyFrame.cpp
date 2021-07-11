@@ -18,7 +18,7 @@ bool MyApp::OnInit()
 }
 
 MyFrame::MyFrame()
-    : wxFrame(NULL, wxID_ANY, "MAPF Errors Simulator")
+    : wxFrame(NULL, wxID_ANY, "MAPF Errors and Collision Detection Simulator")
 {
     //Setting up notebook
     notebook = new wxNotebook(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxNB_TOP);
@@ -95,8 +95,20 @@ void MyFrame::thread_simulation_step() {
 
     if (simulation.last_detection_result.collision_detected && !made_backup) {
 
-        //Chces koliziu vidiet ci nie? ak nie tak ju uloz aby si sa nepytal dokola na tu istu.
-        //ako ano tak sprav toto co tu je teraz
+        simulaton_timer.Stop();
+
+        std::string agt1_name = simulation.show_agents()[simulation.last_detection_result.agent1_index].get_name();
+        std::string agt2_name = simulation.show_agents()[simulation.last_detection_result.agent2_index].get_name();
+
+        std::string from_time = std::to_string(simulation.last_detection_result.from_time);
+        std::string to_time = std::to_string(simulation.last_detection_result.to_time);
+
+        std::string collision_info_text = "Collision will occur between agents " + agt1_name + " and " + agt2_name + " in time range from " + from_time + " to " + to_time + ".\n";
+
+        //Notify user that collision will be shown
+        wxMessageBox(collision_info_text + "Agents will switch to expected plans and collision will be shown.\nTo rollback to current simulation state you can press Restore Backup button.",
+            "Collision detected", wxOK | wxICON_INFORMATION);
+        simulaton_timer.Start();
 
         made_backup = true;
         panel_buttons->set_enable_disable_backup_button(true);

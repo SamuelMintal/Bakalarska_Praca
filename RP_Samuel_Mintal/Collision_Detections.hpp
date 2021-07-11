@@ -90,3 +90,22 @@ public:
 	detection_result execute_detection(std::vector<std::vector<plan_step>>& plans, std::vector<Agent>& agents, int from_time);
 
 };
+
+class Static_Sampling_Detection : public ICollision_Detection {
+
+	float const_error_distance = 0.2;
+	int const_sampling_amplitude_ms = 10;
+
+	pos get_agents_pos_according_to(int time, const Agent& agent, const std::vector<plan_step>& plan);
+
+	float get_distance_of(const pos& p1, const pos& p2);
+
+	int get_max_plan_span(const std::vector<std::vector<plan_step>>& plans);
+
+public:
+
+	Static_Sampling_Detection(float error_distance = 0.2, int sampling_amplitude_ms = 10);
+
+	detection_result execute_detection(std::vector<std::vector<plan_step>>& plans, std::vector<Agent>& agents, int from_time);
+
+};

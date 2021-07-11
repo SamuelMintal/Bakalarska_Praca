@@ -925,9 +925,10 @@
 
         wxArrayString wx_method_names;
 
-        //wx_method_names.Add("None");
+        wx_method_names.Add("None");
         wx_method_names.Add("Line_Detection");
         wx_method_names.Add("Variable_Sampling_Detection");
+        wx_method_names.Add("Static_Sampling_Detection");
         wx_method_names.Add("Rectangle_Detection");
         
         list_box = new wxListBox(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wx_method_names);

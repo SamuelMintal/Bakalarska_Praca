@@ -502,22 +502,22 @@
 
 		detection_result Sampling_Detection::execute_detection(std::vector<std::vector<plan_step>>& plans, std::vector<Agent>& agents, int from_time) {
 
-			std::vector<pos> agents_positions;
+			std::vector<pos> agents_positions(agents.size());
 			//set there initial positions of agents
 			for (size_t i = 0; i < agents.size(); i++) 
-				agents_positions.push_back(get_agents_pos_according_to(from_time, agents[i], plans[i]));
+				agents_positions[i] = get_agents_pos_according_to(from_time, agents[i], plans[i]);
 			
 
-			std::vector<float> distances_to_the_closest_agents;
+			std::vector<float> distances_to_the_closest_agents(agents.size());
 			//set there initial closest distances of agents
 			for (size_t i = 0; i < agents.size(); i++) {
-				distances_to_the_closest_agents.push_back(get_distance_to_the_closest_pos(agents_positions, i));
+				distances_to_the_closest_agents[i] = get_distance_to_the_closest_pos(agents_positions, i);
 			}
 
-			std::vector<size_t> sampling_rates;
+			std::vector<size_t> sampling_rates(agents.size());
 			//set there initial sampling rates of agents
 			for (size_t i = 0; i < agents.size(); i++) {
-				sampling_rates.push_back(get_sampling_rate(distances_to_the_closest_agents[i]));
+				sampling_rates[i] = get_sampling_rate(distances_to_the_closest_agents[i]);
 			}
 
 			int max_plan_make_span = get_max_plan_span(plans);
@@ -573,9 +573,13 @@
 
 
 				//Update sampling_rates if the sampling_rates allow it
-				for (size_t i = 0; i < sampling_rates.size(); i++) 
-					if (0 == (current_tick % sampling_rates[i])) 
+				for (size_t i = 0; i < sampling_rates.size(); i++) {
+
+					size_t rest = current_tick % sampling_rates[i]; //so the compiler doesnt optimalize it away........ 
+				
+					if (!rest) 
 						sampling_rates[i] = get_sampling_rate(get_distance_to_the_closest_pos(agents_positions, i));												
+				}
 			}
 
 
@@ -583,3 +587,96 @@
 			detection_result default_res;
 			return default_res;
 		}
+
+
+
+
+
+
+
+
+
+
+		//class Static_Sampling_Detection : public ICollision_Detection {
+
+			//float const_error_distance = 0.2;
+			//int const_sampling_amplitude_ms = 10;
+
+		pos Static_Sampling_Detection::get_agents_pos_according_to(int time, const Agent& agent, const std::vector<plan_step>& plan) {
+			return agent.get_agents_move_state_in(plan, get_plan_length(plan), time).current;
+		}
+
+		float Static_Sampling_Detection::get_distance_of(const pos& p1, const pos& p2) {
+			return static_cast<float>(
+				std::sqrtf(
+
+					std::pow(std::abs(p1.x) - std::abs(p2.x), 2)
+					+
+					std::pow(std::abs(p1.y) - std::abs(p2.y), 2)
+				)
+				);
+		}
+
+		int Static_Sampling_Detection::get_max_plan_span(const std::vector<std::vector<plan_step>>& plans) {
+
+			int ret = 0;
+
+			for (const std::vector<plan_step>& plan : plans) {
+
+				int curr = get_plan_length(plan);
+
+				if (curr > ret)
+					ret = curr;
+			}
+
+			return ret;
+		}
+
+		//public:
+
+		Static_Sampling_Detection::Static_Sampling_Detection(float error_distance, int sampling_amplitude_ms) 
+			: const_error_distance(error_distance),
+			const_sampling_amplitude_ms(sampling_amplitude_ms){
+			
+		}
+
+		detection_result Static_Sampling_Detection::execute_detection(std::vector<std::vector<plan_step>>& plans, std::vector<Agent>& agents, int from_time) {
+
+			std::vector<pos> agents_positions(agents.size());
+			int max_plan_make_span = get_max_plan_span(plans);
+
+
+			//Collision detection goes here
+			for (size_t curr_time = from_time; curr_time < max_plan_make_span + const_sampling_amplitude_ms; curr_time += const_sampling_amplitude_ms) {
+
+				//update positions according to curr_time
+				for (size_t i = 0; i < agents.size(); i++)
+					agents_positions[i] = get_agents_pos_according_to(curr_time, agents[i], plans[i]);
+
+				//Detect collisions
+				for (size_t i = 0; i < agents_positions.size() - 1; i++) {
+					for (size_t j = i + 1; j < agents_positions.size(); j++) {
+
+						if (get_distance_of(agents_positions[i], agents_positions[j]) <= const_error_distance) {
+							//Collision Detected!
+
+							detection_result ret;
+
+							ret.collision_detected = true;
+							ret.agent1_index = i;
+							ret.agent2_index = j;
+							ret.from_time = curr_time;
+							ret.to_time = curr_time;
+							ret.at_position = agents_positions[i];
+
+							return ret;
+
+						}
+					}
+				}
+			}
+
+			//If there is no collision this returns
+			detection_result default_res;
+			return default_res;
+		}		
