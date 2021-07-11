@@ -553,21 +553,25 @@
 				for (size_t i = 0; i < agents_positions.size() - 1; i++) {
 					for (size_t j = i + 1; j < agents_positions.size(); j++) {
 					
-						if (get_distance_of(agents_positions[i], agents_positions[j]) <= const_error_distance) {
+						int a_i = current_tick % sampling_rates[i];
+						int a_j = current_tick % sampling_rates[j];
 
-							//Collision Detected!
-							detection_result ret;
+						if(!a_i || !a_j) //If at least one agent was actualized this round
+							if (get_distance_of(agents_positions[i], agents_positions[j]) <= const_error_distance) {
 
-							ret.collision_detected = true;
-							ret.agent1_index = i;
-							ret.agent2_index = j;
-							ret.from_time = curr_time;
-							ret.to_time = curr_time;
-							ret.at_position = agents_positions[i];
+								//Collision Detected!
+								detection_result ret;
 
-							return ret;
+								ret.collision_detected = true;
+								ret.agent1_index = i;
+								ret.agent2_index = j;
+								ret.from_time = curr_time;
+								ret.to_time = curr_time;
+								ret.at_position = agents_positions[i];
 
-						}
+								return ret;
+
+							}
 					}
 				}
 

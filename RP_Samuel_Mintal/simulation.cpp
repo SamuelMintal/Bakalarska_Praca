@@ -999,19 +999,19 @@ std::vector<plan_step> Simulation::get_normalized_plan_steps_from(plan_step&& st
             //need to rotate to 0 rotation angle
             if (previous_step.rotation == 90) {
                 //it will be faster to turnLeft
-                ret.emplace_back(plan_step(previous_step.position, previous_step.rotation, "turnLeft", turn_duration, plan_step_id, -90));
+                ret.emplace_back(plan_step(step.position, previous_step.rotation, "turnLeft", turn_duration, plan_step_id, -90));   /////////////////////////////////////////////////////////////////////////////////
                 plan_step_id++;
             }
             else {
                 //it will be faster or equaly as fast to turnRight
                 for (size_t i = 0; ((previous_step.rotation + i) % 360) != 0; i += 90) {
-                    ret.emplace_back(plan_step(previous_step.position, (previous_step.rotation + i) % 360, "turnRight", turn_duration, plan_step_id, 90));
+                    ret.emplace_back(plan_step(step.position, (previous_step.rotation + i) % 360, "turnRight", turn_duration, plan_step_id, 90)); /////////////////////////////////////////////////////////////////////////////////
                     plan_step_id++;
                 }
             }
 
 
-            ret.emplace_back(plan_step(previous_step.position, 0, "end", wait_duration, plan_step_id));
+            ret.emplace_back(plan_step(step.position, 0, "end", wait_duration, plan_step_id));
             plan_step_id++;
             return ret;
 
@@ -1126,19 +1126,19 @@ std::vector<plan_step> Simulation::get_normalized_plan_steps_from(plan_step&& st
 
             if (previous_step.rotation == 90) {
                 //it will be faster to turnLeft
-                ret.emplace_back(plan_step(previous_step.position, previous_step.rotation, "turnLeft", turn_duration, plan_step_id, -90));
+                ret.emplace_back(plan_step(step.position, previous_step.rotation, "turnLeft", turn_duration, plan_step_id, -90));
                 plan_step_id++;
             }
             else {
                 //it will be faster or equaly as fast to turnRight
                 for (size_t i = 0; ((previous_step.rotation + i) % 360) != 0; i += 90) {
-                    ret.emplace_back(plan_step(previous_step.position, (previous_step.rotation + i) % 360, "turnRight", turn_duration, plan_step_id, 90));
+                    ret.emplace_back(plan_step(step.position, (previous_step.rotation + i) % 360, "turnRight", turn_duration, plan_step_id, 90));
                     plan_step_id++;
                 }
             }
 
 
-            ret.emplace_back(plan_step(previous_step.position, 0, "end", wait_duration, plan_step_id));
+            ret.emplace_back(plan_step(step.position, 0, "end", wait_duration, plan_step_id));
             plan_step_id++;
             return ret;
 

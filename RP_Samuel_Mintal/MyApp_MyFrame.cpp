@@ -3,17 +3,24 @@
 #endif
 
 #include "MyApp_MyFrame.h"
-
+#include "Testing_code.hpp"
 
 
 // MyApp is the main Object of this program
 wxIMPLEMENT_APP(MyApp);
 
+#define mintalTESTING
 
 bool MyApp::OnInit()
 {
+    
+#ifdef mintalTESTING
+    TEST___hypothesis_1();
+#endif 
+
     MyFrame* frame = new MyFrame();
     frame->Show(true);
+
     return true;
 }
 
@@ -114,7 +121,7 @@ void MyFrame::thread_simulation_step() {
         panel_buttons->set_enable_disable_backup_button(true);
         backup = simulation;
 
-        simulation.set_to_expected_plans_state(simulation.last_detection_result.from_time);
+        simulation.set_to_expected_plans_state(current_time_of_simulation);
         reload_panels_data();
     }
     else {

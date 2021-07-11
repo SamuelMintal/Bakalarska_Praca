@@ -162,6 +162,7 @@
     <ClInclude Include="MyApp_MyFrame.h" />
     <ClInclude Include="simulation.hpp" />
     <ClInclude Include="Structs.hpp" />
+    <ClInclude Include="Testing_code.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="RP_icon.XPM" />
