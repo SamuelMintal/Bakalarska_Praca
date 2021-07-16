@@ -543,11 +543,11 @@
         if (map.size() > 0) {            
 
             //calculating scale for current panel size
-            scale = std::min((dc.GetSize().y - offset * 2) / (map.size() - 1), (dc.GetSize().x - offset * 2) / (map[0].size() - 1));
+            scale = std::min((dc.GetSize().y - offset * 2) / std::max(static_cast<unsigned int>(1), map.size() - 1), (dc.GetSize().x - offset * 2) / std::max(static_cast<unsigned int>(1), map[0].size() - 1));
             
-            horizontal_length = (map[0].size() - 1) * scale;
-            vertical_length = (map.size() - 1) * scale;
-
+            horizontal_length =/* std::max(static_cast<unsigned int>(1),*/ (map[0].size() - 1) * scale;
+            vertical_length = /*std::max(static_cast<unsigned int>(1),*/ (map.size() - 1) * scale;
+                                                                                       
 
             //drawing horizontal lines
             for (size_t i = 0; i < map.size(); i++) 

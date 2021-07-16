@@ -9,13 +9,14 @@
 // MyApp is the main Object of this program
 wxIMPLEMENT_APP(MyApp);
 
-#define mintalTESTING
+//#define mintalTESTING
 
 bool MyApp::OnInit()
 {
     
 #ifdef mintalTESTING
-    TEST___hypothesis_1();
+    TEST___hypothesis_1(); //change for cycle range and also hyp 5
+    TEST___hypothesis_4();
 #endif 
 
     MyFrame* frame = new MyFrame();
