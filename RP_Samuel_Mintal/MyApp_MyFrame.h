@@ -6,7 +6,6 @@
 #endif
 
 #include <wx/notebook.h>
-//#include "RP_icon.XPM" nefunguje
 
 #include "simulation.hpp"
 #include "Enums.h"
