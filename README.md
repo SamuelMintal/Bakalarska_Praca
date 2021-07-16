@@ -1,5 +1,5 @@
 # RP_Samuel_Mintal
-Rocnikovy projekt
+Bakalarska Praca program
 
 Projekt mi funguje na windowse. Malo by to ist aj na linuxe aj macOS, tam som to ale neskusal.
 Pouzival som GUI kniznicu https://www.wxwidgets.org/.
