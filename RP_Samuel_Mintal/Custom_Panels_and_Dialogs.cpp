@@ -175,7 +175,7 @@
 
     void Error_Dialog::Rejected(wxCommandEvent& event) {
 
-        int answer = wxMessageBox("Are you sure you want to leave without saveing changes?", "Unsaved data:",
+        int answer = wxMessageBox("Are you sure you want to leave without saving changes?", "Unsaved data:",
             wxYES | wxNO);
 
         if (answer == wxYES)
@@ -332,8 +332,7 @@
     void Extended_controls_panel::reload_data() {
 
         //+1 because empty plan could have 0 max and slider requires that min < max
-        slider_current_time_of_simulation->SetMax(Frame_with_simulation->simulation.get_agent_plan_max_length() + 1); 
-        //slider_current_time_of_simulation->SetValue(Frame_with_simulation->current_time_of_simulation);
+        slider_current_time_of_simulation->SetMax(Frame_with_simulation->simulation.get_agent_plan_max_length() + 1);         
 
         agents_plans_panel->update_data();
     }

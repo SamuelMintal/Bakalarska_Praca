@@ -457,7 +457,7 @@ size_t Simulation::roll_pair_and_get_its_index(const std::vector<std::pair<int, 
 }
 
 /* Sets agent's timediffs vector accordingly to the 2 specified plans
-* returns time spam of the altered plan
+* returns time span of the altered plan
 */
 int Simulation::set_time_diffs_of_agent_accordingly_to(int agent_index, const std::vector<plan_step>& altered, const std::vector<plan_step>& original) {
     //Note-ing time differences of original vs altered plan of agent, so I can detect errors later
@@ -1177,11 +1177,6 @@ std::vector<plan_step> Simulation::get_normalized_plan_steps_from(plan_step&& st
                 ret.emplace_back(plan_step(step.position, (previous_step.rotation + 90) % 360, "turnRight", turn_duration, plan_step_id, 90));
                 plan_step_id++;
              }
-             //else if (angle_delta == 0) {
-             //    //when no rotation occured, the agent will have to wait the turn_duration so the plan will stay synced
-             //    ret.emplace_back(plan_step(step.position, step.rotation, "wait", turn_duration, plan_step_id));
-             //    plan_step_id++;
-             //}
 
              ret.emplace_back(plan_step(step.position, cardinal_to_angle(step.action), "go", go_duration, plan_step_id));
              plan_step_id++;
@@ -1292,11 +1287,7 @@ bool Simulation::move_to_time(int time) {
     for (size_t i = 0; i < agents.size(); i++) 
         expected_plans.push_back(get_expected_plan_from_time(time, agents[i]));
     
-    //std::string chosen_detection_method = "";
-    //detection_result last_detection_result;
-    //wx_method_names.Add("Line_Detection");
-    //wx_method_names.Add("Variable_Sampling_Detection");
-    //wx_method_names.Add("Rectangle_Detection");
+
     std::unique_ptr<ICollision_Detection> cd;
 
     if(chosen_detection_method == "Line_Detection") 
@@ -1313,10 +1304,6 @@ bool Simulation::move_to_time(int time) {
     else
         last_detection_result.collision_detected = false;
     
-    //if (last_detection_result.collision_detected) {
-    //    last_detection_result.collision_detected = true;
-    //}
-
 
 
     int idx = 0;
@@ -1401,14 +1388,14 @@ const std::vector<std::vector<char>>& Simulation::show_map() {
 }
 
 /*
-* Gives only const reference
+* Gives only reference
 */
  std::vector<Agent>& Simulation::show_agents() {
     return agents;
 }
 
 /*
-* returns the time spam of the simulation
+* returns the time span of the simulation
 */
 int Simulation::get_agent_plan_max_length() {
     return agent_plan_max_length;

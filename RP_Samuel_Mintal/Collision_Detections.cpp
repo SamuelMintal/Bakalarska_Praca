@@ -6,7 +6,7 @@
 
 
 
-//class ICollision_Detection::
+//class ICollision_Detection
 
 	int ICollision_Detection::get_plan_length(const std::vector<plan_step>& plan) {
 	
@@ -180,9 +180,7 @@
 
 			for (size_t i = 0; i < agents_positions.size() - 1; i++) {
 				for (size_t j = i + 1; j < agents_positions.size(); j++) {
-					//if (do_two_agent_lines_intersect(agents_positions[i][ts_i], agents_positions[j][ts_i])) {
-					//	printf("HEH");
-					//}
+
 					if (do_two_agent_lines_intersect(agents_positions[i][ts_i], agents_positions[j][ts_i])) {
 
 						//Collision Detected!
@@ -362,9 +360,7 @@
 
 				for (size_t i = 0; i < agents_positions.size() - 1; i++) {
 					for (size_t j = i + 1; j < agents_positions.size(); j++) {
-//						if (do_two_agent_rectangles_intersect(agents_positions[i][ts_i], agents_positions[j][ts_i])) {
-//							printf("HEH");
-//						}
+
 						if (do_two_agent_rectangles_intersect(agents_positions[i][ts_i], agents_positions[j][ts_i])) {
 
 							//Collision Detected!

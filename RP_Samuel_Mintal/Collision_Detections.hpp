@@ -5,7 +5,8 @@
 
 #include "Structs.hpp"
 
-
+/* Interface which every collision detection method implements
+*/
 class ICollision_Detection {	
 
 protected:

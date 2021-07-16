@@ -25,6 +25,8 @@ bool MyApp::OnInit()
     return true;
 }
 
+/*Initalization of the whole application
+*/
 MyFrame::MyFrame()
     : wxFrame(NULL, wxID_ANY, "MAPF Errors and Collision Detection Simulator")
 {
@@ -74,11 +76,17 @@ void MyFrame::OnExit(wxCommandEvent& event) {
     Close(true);
 }
 
+/* when simulation state changes this function should be called
+* Othervise the panels will not be consistent with the simulation
+*/
 void MyFrame::update_panels_data() {
     panel_agents->update_data();
     panel_extended_controls->update_data();
 }
 
+/* when we set new simulation this function should be called
+* Othervise the panels will not be consistent with the simulation
+*/
 void MyFrame::reload_panels_data() {
     panel_agents->update_data();
     panel_extended_controls->reload_data();
@@ -87,6 +95,8 @@ void MyFrame::reload_panels_data() {
     panel_simulation->paintNow();
 }
 
+/* moves simulation to next time
+*/
 void MyFrame::thread_simulation_step(wxTimerEvent& event) {
 
     //I dont care about the event's data

@@ -11,5 +11,5 @@ struct detection_result {
 	int agent2_index = 0;
 	int from_time = 0;
 	int to_time = 0;
-	pos at_position;
+	pos at_position; //unused
 };

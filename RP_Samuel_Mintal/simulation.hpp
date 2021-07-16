@@ -52,9 +52,9 @@ class Time_diff_error {
 public:
     
     int  time_stamp; //Time when agent has time difference against original plan of size time_stamp
-    int   time_diff; //time in miliseconds agent is behind or forward (sign depended
+    int   time_diff; //time in miliseconds agent is behind or forward - sign depended
 
-    Time_diff_error(/*int agent_index,*/ int time_stamp, int time_diff) : /*agent_index(agent_index),*/ time_stamp(time_stamp), time_diff(time_diff) { }
+    Time_diff_error( int time_stamp, int time_diff): time_stamp(time_stamp), time_diff(time_diff) { }
 
     bool operator < (const Time_diff_error& second) const
     {
@@ -180,7 +180,7 @@ private:
     */
     bool is_obstacle_on_position(const pos& position) const;
 
-    /* Transforms any angle to range of 0 < angle <= 360
+    /* Transforms any angle to range of 0 < angle < 360
     */
     int normalize_angle(int angle) const;
 
@@ -203,7 +203,7 @@ private:
     size_t roll_pair_and_get_its_index(const std::vector<std::pair<int, float>>& prob_map, uint64_t prob_sum, int i, int j);
 
     /* Sets agent's timediffs vector accordingly to the 2 specified plans
-    * returns time spam of the altered plan
+    * returns time span of the altered plan
     */
     int set_time_diffs_of_agent_accordingly_to(int agent_index, const std::vector<plan_step>& altered, const std::vector<plan_step>& original);
 
@@ -304,12 +304,12 @@ public:
     const std::vector<std::vector<char>>& show_map();
 
     /*
-    * Gives only const reference
+    * Gives only reference
     */
      std::vector<Agent>& show_agents();
 
     /*
-    * returns the time spam of the simulation
+    * returns the time span of the simulation
     */
     int get_agent_plan_max_length();
 
