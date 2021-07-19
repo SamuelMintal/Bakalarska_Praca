@@ -28,7 +28,7 @@ std::pair<std::string, std::string> get_input_output_file_paths() {
 	return std::make_pair(input_solr, output_file_name);
 }
 
-void TEST___hypothesis_1() {
+void TEST___hypothesis_1_2() {
 
 	auto files = get_input_output_file_paths();
 	std::string input_solr = files.first;
@@ -57,7 +57,7 @@ void TEST___hypothesis_1() {
 
 
 	auto start = std::chrono::high_resolution_clock::now();
-	for (size_t i = 0; i < 1000; i++)
+	for (size_t i = 0; i < 1000; i++) //change this for different hipothesis requirements
 		cd->execute_detection(expected_plans, agents, time);
 	auto end = std::chrono::high_resolution_clock::now();
 
@@ -74,7 +74,7 @@ void TEST___hypothesis_1() {
 
 
 
-	//So it cannot get benefir of being cached
+	//So it cannot get benefit of being cached
 	Simulation sim2;
 	sim2.load_plans(input_solr, durations);
 	sim2.chosen_detection_method = "Static_Sampling_Detection";
@@ -91,7 +91,7 @@ void TEST___hypothesis_1() {
 	std::unique_ptr<ICollision_Detection> cd2 = std::make_unique<Static_Sampling_Detection>();
 
 	auto start2 = std::chrono::high_resolution_clock::now();
-	for (size_t i = 0; i < 1000; i++)
+	for (size_t i = 0; i < 1000; i++)//change this for different hipothesis requirements
 		cd2->execute_detection(expected_plans2, agents2, time);
 	auto end2 = std::chrono::high_resolution_clock::now();
 
@@ -114,7 +114,7 @@ void TEST___hypothesis_1() {
 
 
 
-void TEST___hypothesis_4() {
+void TEST___hypothesis_5_6() {
 
 	auto files = get_input_output_file_paths();
 	std::string input_solr = files.first;
@@ -138,7 +138,7 @@ void TEST___hypothesis_4() {
 		expected_plans.push_back(sim.get_expected_plan_from_time(time, agents[i]));
 
 	std::vector<std::vector <std::vector<plan_step>>> vect_of_plans;
-	for (size_t i = 0; i < expected_plans.size(); i++)
+	for (size_t i = 0; i < 4; i++) //because 4 types of Collsion detection methods
 		vect_of_plans.push_back(expected_plans);
 
 
@@ -161,7 +161,7 @@ void TEST___hypothesis_4() {
 
 
 		auto start = std::chrono::high_resolution_clock::now();
-		for (size_t i = 0; i < 250; i++)
+		for (size_t i = 0; i < 1000; i++)
 			cd->execute_detection(act_plans, agents, time);
 		auto end = std::chrono::high_resolution_clock::now();
 
@@ -171,8 +171,8 @@ void TEST___hypothesis_4() {
 		//record result
 		res.push_back(std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count());
 
-		//to avoid thermal throtling
-		std::this_thread::sleep_for(std::chrono::seconds(5));
+		//to avoid thermal throtling on laptop
+		std::this_thread::sleep_for(std::chrono::seconds(3));
 	}
 
 
@@ -187,7 +187,7 @@ void TEST___hypothesis_4() {
 
 	myfile << get_current_time_string() << std::endl;
 	myfile << "Line_Detection = " + std::to_string(res[0]) << std::endl;
-	myfile << "Sampling_Detection = " + std::to_string(res[1]) << std::endl;
+	myfile << "Variable_Sampling_Detection = " + std::to_string(res[1]) << std::endl;
 	myfile << "Static_Sampling_Detection = " + std::to_string(res[2]) << std::endl;
 	myfile << "Rectangle_Detection = " + std::to_string(res[3]) << std::endl << std::endl;
 	

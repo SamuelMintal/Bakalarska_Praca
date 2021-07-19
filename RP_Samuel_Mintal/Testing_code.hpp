@@ -22,5 +22,5 @@ std::pair<std::string, std::string> get_input_output_file_paths();
 
 
 
-void TEST___hypothesis_1();
-void TEST___hypothesis_4();
+void TEST___hypothesis_1_2();
+void TEST___hypothesis_5_6();

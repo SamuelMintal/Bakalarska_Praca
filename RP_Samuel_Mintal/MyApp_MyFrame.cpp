@@ -15,8 +15,8 @@ bool MyApp::OnInit()
 {
     
 #ifdef mintalTESTING
-    TEST___hypothesis_1(); //change for cycle range and also hyp 5
-    TEST___hypothesis_4();
+    //TEST___hypothesis_5_6(); //change for cycle range may be required for concrete hypothesis
+    //TEST___hypothesis_1_2(); //change for cycle range may be required for concrete hypothesis
 #endif 
 
     MyFrame* frame = new MyFrame();
