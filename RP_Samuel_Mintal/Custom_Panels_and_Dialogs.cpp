@@ -929,6 +929,7 @@
         wx_method_names.Add("Variable_Sampling_Detection");
         wx_method_names.Add("Static_Sampling_Detection");
         wx_method_names.Add("Rectangle_Detection");
+        //wx_method_names.Add("My brand new custom detection method"); --- For integration of new collision detection methods
         
         list_box = new wxListBox(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wx_method_names);
         Collision_detection_sizer->Add(list_box, 2, wxEXPAND | wxALL, 10);

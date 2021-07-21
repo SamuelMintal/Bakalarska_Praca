@@ -1298,7 +1298,11 @@ bool Simulation::move_to_time(int time) {
         cd = std::make_unique<Static_Sampling_Detection>();
     else if(chosen_detection_method == "Rectangle_Detection")
         cd = std::make_unique<Rectangle_Detection>(2000);    
-    
+    //else if(chosen_detection_method == "My brand new custom detection method") --- For integration of new collision detection methods
+    //  cd = std::make_unique<Custom_Detection>();    
+
+
+
     if (cd)
         last_detection_result = cd->execute_detection(expected_plans, agents, time);
     else
