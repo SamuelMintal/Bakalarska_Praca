@@ -521,21 +521,6 @@
 			//Collision detection goes here
 			for (size_t curr_time = from_time, current_tick = 1; curr_time < max_plan_make_span + const_sampling_amplitude_ms; curr_time += const_sampling_amplitude_ms, current_tick++) {
 
-
-
-				if (false) {
-					curr_time = 3990;
-					curr_time = 5990;
-
-					curr_time = 7700;
-
-					curr_time = 9990;
-					curr_time = 11990;
-				}
-
-
-
-
 				//update positions according to curr_time, if theyr sampling rate allows it
 				for (size_t i = 0; i < sampling_rates.size(); i++) {
 
