@@ -229,6 +229,6 @@ void MyFrame::OnRestore(wxCommandEvent& event) {
 void MyFrame::On_button_about(wxCommandEvent& event) {
 
     //Sort of super quick quide
-    wxMessageBox("This is a MAPF error simulator. \n At first you need to load a plan and set action durations. \n Then set desired errors for agents \n And lastly start the simulation",
-        "About MAPF error simulator", wxOK | wxICON_INFORMATION);
+    wxMessageBox("This is a MAPF Errors and Collision Detection Simulator. \n At first you need to load a plan and set action durations. \n Then set desired errors for agents \n And lastly start the simulation",
+        "About MAPF Errors and Collision Detection Simulator", wxOK | wxICON_INFORMATION);
 }
